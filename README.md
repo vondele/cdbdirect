@@ -83,16 +83,14 @@ On Ubuntu, install the needed prerequisites:
 sudo apt-get install libgoogle-perftools-dev libtbb-dev libaio-dev liblz4-dev libsnappy-dev zlib1g-dev libbz2-dev libgflags-dev
 ```
 
-Clone the needed repos, including terakdb, and build
+Clone noobpwnftw's terakdb repo and build it
 
 ```
-git clone https://github.com/noobpwnftw/ssdb.git
-cd ssdb/deps
 git clone https://github.com/noobpwnftw/terarkdb.git
-cd ..
-make -j
+cd terarkdb
+./build.sh
 ```
 
-Ensure the Makefile variable `TERARKDBROOT` points to the full path of `ssdb/deps/terarkdb`
+After building, ensure this repo's Makefile variable `TERARKDBROOT` points to `/the/full/path/of/terarkdb/`
 
 
