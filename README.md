@@ -14,6 +14,48 @@ in a specific file (currently hard-coded to `caissa_sorted_100000.epd` available
 ./cdbdirect
 ```
 
+sample output:
+
+```
+...
+-------------------------------------------------------------
+Probing: rn1q1rk1/pbppnpbp/1p2p1p1/6B1/2BPP3/2N2N2/PPP2PPP/R2Q1RK1 w - -
+    d1d2 : 133
+    d4d5 : 70
+    h2h4 : 62
+    e4e5 : 41
+    g5f4 : 26
+    f1e1 : 20
+    d1e2 : 18
+    g5h4 : 18
+    c4d3 : 17
+    h2h3 : 17
+    c4b3 : 17
+    d1c1 : 16
+    a2a4 : 15
+    a1b1 : 10
+    g5e3 : 7
+    a2a3 : 2
+    c4e2 : 2
+    g5d2 : 1
+    g5c1 : 1
+    c4b5 : -10
+    b2b4 : -13
+    d1d3 : -13
+    g1h1 : -18
+    g5e7 : -18
+    b2b3 : -37
+    c4d5 : -377
+    Distance to startpos equal or less than 14
+Required time: 36.279 (17.794) microsec.
+-------------------------------------------------------------
+Probing: rnb1kbnr/pp2qpp1/2pp3p/4p3/3P4/2PBPN2/PP1N1PPP/R1BQK2R w KQkq -
+Fen not found in DB!
+Required time: 25.659 (17.453) microsec.
+-------------------------------------------------------------
+...
+```
+
 ## Building
 
 Once prerequisites are available building is as simple as
