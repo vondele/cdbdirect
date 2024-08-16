@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <chrono>
-#include <deque>
+#include <vector>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -76,7 +76,7 @@ int main() {
     // If we have a hit decode the answer
     if (s.ok()) {
       // decode the value to scoredMoves
-      std::deque<StrPair> scoredMoves;
+      std::vector<StrPair> scoredMoves;
       get_hash_values(value, scoredMoves);
 
       // sort moves

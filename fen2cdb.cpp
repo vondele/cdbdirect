@@ -530,7 +530,7 @@ int get_hash_value(const Bytes &slice, const Bytes &field, std::string *value) {
   return 0;
 }
 
-int get_hash_values(const Bytes &slice, std::deque<StrPair> &values) {
+int get_hash_values(const Bytes &slice, std::vector<StrPair> &values) {
   if (slice.empty() || slice.size() % (2 * sizeof(int16_t)) != 0) {
     return 0;
   }
