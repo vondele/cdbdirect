@@ -5,8 +5,8 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include "cdbdirect.h"
 

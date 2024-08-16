@@ -52,12 +52,28 @@ Required time: 95.791 microsec.
 
 ```
 
+or a threaded example:
+```
+./cdbdirect_threaded
+```
+
+sample output:
+```
+Loading: grob_popular_T60t7_cdb.epd
+Probing 35754929 fens with 32 threads.
+known fens:   7568
+unknown fens: 35747361
+scored moves: 43286
+Required probing time:         27.7956 sec.
+Required time per fen: 0.777391 microsec.
+```
+
 ## Building
 
 Once prerequisites are available building is as simple as
 
 ```
-make 
+make -j
 ```
 
 ## Prerequisites
