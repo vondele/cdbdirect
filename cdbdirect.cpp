@@ -23,7 +23,7 @@ int main() {
   Options options;
 
   // open DB
-  std::string kDBPath = "/mnt/ssd/rocks/chess/data";
+  std::string kDBPath = "/mnt/ssd/chess-20211203/data";
   Status s = DB::OpenForReadOnly(options, kDBPath, &db);
   if (!s.ok())
     std::cerr << s.ToString() << std::endl;
