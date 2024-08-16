@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <utility>
 
 std::uintptr_t cdbdirect_initialize(const std::string &path);
 std::uintptr_t cdbdirect_finalize(std::uintptr_t handle);
