@@ -89,7 +89,7 @@ Note that the file `cdbdirect.cpp` contains the hard-coded path to the DB `kDBPa
 On Ubuntu, install the needed prerequisites:
 
 ```
-sudo apt-get install libgoogle-perftools-dev libtbb-dev libaio-dev liblz4-dev libsnappy libsnappy-dev zlib1g-dev libbz2-dev libgflags-dev
+sudo apt-get install libgoogle-perftools-dev libtbb-dev libaio-dev liblz4-dev libsnappy-dev zlib1g-dev libbz2-dev libgflags-dev
 ```
 
 Clone the needed repos, including terakdb, and build
