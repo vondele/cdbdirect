@@ -17,43 +17,39 @@ in a specific file (currently hard-coded to `caissa_sorted_100000.epd` available
 sample output:
 
 ```
-...
 -------------------------------------------------------------
-Probing: rn1q1rk1/pbppnpbp/1p2p1p1/6B1/2BPP3/2N2N2/PPP2PPP/R2Q1RK1 w - -
-    d1d2 : 133
-    d4d5 : 70
-    h2h4 : 62
-    e4e5 : 41
-    g5f4 : 26
-    f1e1 : 20
-    d1e2 : 18
-    g5h4 : 18
-    c4d3 : 17
-    h2h3 : 17
-    c4b3 : 17
-    d1c1 : 16
-    a2a4 : 15
-    a1b1 : 10
-    g5e3 : 7
-    a2a3 : 2
-    c4e2 : 2
-    g5d2 : 1
-    g5c1 : 1
-    c4b5 : -10
-    b2b4 : -13
-    d1d3 : -13
-    g1h1 : -18
-    g5e7 : -18
-    b2b3 : -37
-    c4d5 : -377
-    Distance to startpos equal or less than 14
-Required time: 36.279 (17.794) microsec.
+Probing: rnbqkb1r/p1pp2pp/1p3n2/5p2/2P5/2NP4/PP3PPP/R1BQKBNR w KQkq -
+    f1e2 : 96
+    g1f3 : 79
+    c1f4 : 63
+    h2h3 : 62
+    c1e3 : 60
+    g1e2 : 56
+    a1b1 : 56
+    g1h3 : 51
+    d3d4 : 46
+    c1g5 : 42
+    d1e2 : 26
+    h2h4 : 24
+    a2a4 : 20
+    c1d2 : 19
+    d1f3 : 4
+    a2a3 : 1
+    d1d2 : 0
+    g2g3 : -56
+    Distance to startpos equal or less than 10
+Required time: 112.503 microsec.
 -------------------------------------------------------------
-Probing: rnb1kbnr/pp2qpp1/2pp3p/4p3/3P4/2PBPN2/PP1N1PPP/R1BQK2R w KQkq -
+Probing: rn1qkbnr/ppp1p1pp/4b3/3p1p2/8/5N2/PPPP1PPP/RNBQKB1R b KQkq -
+    g8f6 : 139
+    Distance to startpos equal or less than 7
+Required time: 125.588 microsec.
+-------------------------------------------------------------
+Probing: r1bqkb1r/ppp2ppp/4pn2/8/3p4/1B1P1Q2/PPP2PPP/RNB1K2R w KQkq -
 Fen not found in DB!
-Required time: 25.659 (17.453) microsec.
+Required time: 95.791 microsec.
 -------------------------------------------------------------
-...
+
 ```
 
 ## Building
