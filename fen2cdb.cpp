@@ -1,7 +1,7 @@
 /*
 
-   The code in this file has been authored by noobpwnftw and is covered by the original licenses
-   a BSD-style license (ssdb) and the unlicense (chessdb). See
+   The code in this file has been authored by noobpwnftw and is covered by the
+original licenses a BSD-style license (ssdb) and the unlicense (chessdb). See
    https://github.com/noobpwnftw/ssdb/blob/124302059809644acc6726a72e234bdb275c56af/src/ssdb/t_hash.h
    https://github.com/noobpwnftw/chessdb/blob/7995300ce3bb68683e6da76e45a94f4c85735d69/extensions/PHP5/cboard/cboard.cpp
 

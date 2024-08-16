@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cassert>
-#include <vector>
 #include <string>
+#include <vector>
 
 using Bytes = std::string;
 using StrPair = std::pair<std::string, std::string>;

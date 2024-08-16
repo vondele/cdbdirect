@@ -77,7 +77,7 @@ These dumps are large (>1TB) and will take several hours to download.
 wget -c -r -nH --cut-dirs=2 --no-parent --reject="index.html*" -e robots=off ftp://chessdb:chessdb@ftp.chessdb.cn/pub/chessdb/chess-20240814
 ```
 
-Note that the file `cdbdirect.cpp` contains the hard-coded path to the DB `kDBPath`, which should be adjusted as needed.
+Note that the file `main.cpp` contains the hard-coded path to the DB `cdbdirect_initialize("/mnt/ssd/chess-20211203/data")`, which should be adjusted as needed.
 
 ### Compiled rocksdb fork
 

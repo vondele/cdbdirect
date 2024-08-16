@@ -1,8 +1,8 @@
 # Needs to point to the root directory of git tree containing a compiled version of a specific fork of rocksDB (see README.md)
 TERARKDBROOT = /home/vondele/chess/noob/ssdb/deps/terarkdb
 
-SRC = fen2cdb.cpp cdbdirect.cpp
-HEADERS = fen2cdb.h
+SRC = main.cpp fen2cdb.cpp cdbdirect.cpp
+HEADERS = fen2cdb.h cdbdirect.h
 EXE = cdbdirect
 
 CXX = g++
