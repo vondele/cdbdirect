@@ -70,16 +70,11 @@ make
 
 A suitably prepared dump of the database. 
 
-These dumps are large (e.g. 200GB - >1TB) and will take several hours to download.
+These dumps are large (>1TB) and will take several hours to download.
 
-* An smaller, old dump, useful for 'quick' testing:
+* The following dump contains >40B chess positions
 ```
-wget -c ftp://chessdb:chessdb@ftp.chessdb.cn/pub/chessdb/chess-20211203.tar
-tar -xvf chess-20211203.tar
-```
-* A recent dump containing > 40B chess positions:
-```
-TODO
+wget -c -r -nH --cut-dirs=2 --no-parent --reject="index.html*" -e robots=off ftp://chessdb:chessdb@ftp.chessdb.cn/pub/chessdb/chess-20240814
 ```
 
 Note that the file `cdbdirect.cpp` contains the hard-coded path to the DB `kDBPath`, which should be adjusted as needed.
