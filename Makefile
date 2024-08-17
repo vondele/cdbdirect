@@ -2,18 +2,19 @@
 TERARKDBROOT = /home/vondele/chess/noob/terarkdb
 
 # example executables
-EXESRC1 = main.cpp
-EXESRC2 = main_threaded.cpp
 EXE1 = cdbdirect
 EXE2 = cdbdirect_threaded
+EXESRC1 = main.cpp
+EXESRC2 = main_threaded.cpp
 
-# library to be used by the exe
+# library to be used by the exe and other applications
 LIBTARGET = libcdbdirect.a
+LIBHEADER = cdbdirect.h
 
-# sources and head to build the library
+# sources and headers to build the library
 LIBSRC = fen2cdb.cpp cdbdirect.cpp
 LIBOBJ = $(patsubst %.cpp, %.o, $(LIBSRC))
-HEADERS = cdbdirect.h fen2cdb.h external/threadpool.hpp
+HEADERS = $(LIBHEADER) fen2cdb.h external/threadpool.hpp
 
 # tools
 CXX = g++
