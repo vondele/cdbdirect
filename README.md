@@ -7,8 +7,12 @@ Even though API access to cdb is easily possible (see e.g. [cdbexplore](https://
 
 ## Usage
 
-The PoC code just probes the local copy of cdb and prints the ranked moves with their scores for all fens
-in a specific file (currently hard-coded to `caissa_sorted_100000.epd` available at [caissatrack](https://github.com/robertnurnberg/caissatrack)) :
+The PoC code just probes the local copy of cdb and prints the ranked moves with
+their scores for all fens.  in a specific file. Note that fens should have have
+`-` for the ep if no legal ep move is possible (including pinned pawns), and
+move counters are ignored. This file is currently hard-coded to
+`caissa_sorted_100000.epd` available at
+[caissatrack](https://github.com/robertnurnberg/caissatrack)) :
 
 ```
 ./cdbdirect
