@@ -228,8 +228,8 @@ std::string cbfen2hexfen(const std::string &fen) {
   size_t fenstr_len = fen.size();
 
   char bitstr[CHESS_BITSTR_MAX_LENGTH];
-  int index = 0;
-  int tmpindex = 0;
+  size_t index = 0;
+  size_t tmpindex = 0;
   while (index < fenstr_len) {
     char curCh = fenstr[index];
     if (curCh == ' ') {
@@ -272,9 +272,9 @@ std::string cbfen2hexfen(const std::string &fen) {
 std::string cbhexfen2fen(const std::string &hexfen) {
   const char *fenstr = hexfen.data();
   size_t fenstr_len = hexfen.size();
-  int index = 0;
+  size_t index = 0;
   char fen[CHESS_FEN_MAX_LENGTH];
-  int tmpidx = 0;
+  size_t tmpidx = 0;
   for (int sq = 0; sq < 64; sq++) {
     if (sq != 0 && (sq % 8) == 0) {
       fen[tmpidx++] = '/';
@@ -339,8 +339,8 @@ std::string cbgetBWfen(const std::string &orig) {
   size_t fenstr_len = orig.size();
   char fen[CHESS_FEN_MAX_LENGTH];
   char tmp[CHESS_FEN_MAX_LENGTH];
-  int index = 0;
-  int tmpidx = 0;
+  size_t index = 0;
+  size_t tmpidx = 0;
   fen[0] = '\0';
   while (index < fenstr_len) {
     if (fenstr[index] == ' ') {
@@ -371,7 +371,7 @@ std::string cbgetBWfen(const std::string &orig) {
       index++;
 
       while (index < fenstr_len) {
-        char tmp = MoveToBW[fenstr[index]];
+        char tmp = MoveToBW[int(fenstr[index])];
         if (tmp)
           fen[index] = tmp;
         else
@@ -407,9 +407,9 @@ std::string cbgetBWmove(const std::string &move) {
   size_t movestr_len = move.size();
   char BWmove[6];
   BWmove[4] = '\0';
-  for (int i = 0; i < movestr_len; i++) {
+  for (size_t i = 0; i < movestr_len; i++) {
     if (i < 4) {
-      char tmp = MoveToBW[movestr[i]];
+      char tmp = MoveToBW[int(movestr[i])];
       if (tmp)
         BWmove[i] = tmp;
       else
@@ -518,7 +518,7 @@ int get_hash_value(const Bytes &slice, const Bytes &field, std::string *value) {
   if (slice.empty() || slice.size() % (2 * sizeof(int16_t)) != 0) {
     return 0;
   }
-  for (int i = 0; i < slice.size(); i += 2 * sizeof(int16_t)) {
+  for (size_t i = 0; i < slice.size(); i += 2 * sizeof(int16_t)) {
     std::string elem_field, elem_value;
     if (decode_hash_value(Bytes(slice.data() + i, 2 * sizeof(int16_t)),
                           &elem_field, &elem_value) == 0 &&
@@ -534,7 +534,7 @@ int get_hash_values(const Bytes &slice, std::vector<StrPair> &values) {
   if (slice.empty() || slice.size() % (2 * sizeof(int16_t)) != 0) {
     return 0;
   }
-  for (int i = 0; i < slice.size(); i += 2 * sizeof(int16_t)) {
+  for (size_t i = 0; i < slice.size(); i += 2 * sizeof(int16_t)) {
     std::string elem_field, elem_value;
     if (decode_hash_value(Bytes(slice.data() + i, 2 * sizeof(int16_t)),
                           &elem_field, &elem_value) == 0) {

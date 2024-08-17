@@ -18,7 +18,7 @@ HEADERS = $(LIBHEADER) fen2cdb.h external/threadpool.hpp
 
 # tools
 CXX = g++
-CXXFLAGS = -O3 -g
+CXXFLAGS = -O3 -g -Wall -Werror
 AR = ar
 ARFLAGS = rcs
 
