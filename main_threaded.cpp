@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -22,8 +23,9 @@ int main() {
   size_t num_threads = std::thread::hardware_concurrency();
   fens_chunked.resize(num_threads * 20);
 
-  // std::string filename = "/mnt/ssd/pgns/elite/Lichess Elite Database/elite20.epd";
-  std::string filename = "caissa_sorted_100000.epd";
+  // std::string filename = "/mnt/ssd/pgns/elite/Lichess Elite
+  // Database/elite20.epd"; std::string filename = "caissa_sorted_100000.epd";
+  std::string filename = "caissa_all.epd";
 
   std::cout << "Loading: " << filename << std::endl;
   std::ifstream file(filename);
@@ -53,6 +55,14 @@ int main() {
 
   file.close();
 
+  std::mutex unknown_fens_vector_mutex;
+  std::vector<std::string> unknown_fens_vector;
+  auto add_unknown = [&unknown_fens_vector,
+                      &unknown_fens_vector_mutex](const std::string &fen) {
+    const std::lock_guard<std::mutex> lock(unknown_fens_vector_mutex);
+    unknown_fens_vector.push_back(fen);
+  };
+
   std::atomic<size_t> known_fens = 0;
   std::atomic<size_t> unknown_fens = 0;
   std::atomic<size_t> scored_moves = 0;
@@ -64,24 +74,26 @@ int main() {
             << std::endl;
   auto t_start = std::chrono::high_resolution_clock::now();
   for (const auto &chunk : fens_chunked)
-    pool.enqueue(
-        [&handle, &known_fens, &unknown_fens, &scored_moves, &chunk]() {
-          for (auto &fen : chunk) {
+    pool.enqueue([&handle, &known_fens, &unknown_fens, &scored_moves, &chunk,
+                  &add_unknown]() {
+      for (auto &fen : chunk) {
 
-            std::vector<std::pair<std::string, int>> result =
-                cdbdirect_get(handle, fen);
+        std::vector<std::pair<std::string, int>> result =
+            cdbdirect_get(handle, fen);
 
-            size_t n_elements = result.size();
-            int ply = result[n_elements - 1].second;
+        size_t n_elements = result.size();
+        int ply = result[n_elements - 1].second;
 
-            if (ply > -2)
-              known_fens++;
-            else
-              unknown_fens++;
+        if (ply > -2)
+          known_fens++;
+        else {
+          unknown_fens++;
+          add_unknown(fen);
+        }
 
-            scored_moves += n_elements - 1;
-          }
-        });
+        scored_moves += n_elements - 1;
+      }
+    });
 
   // Wait for all threads to finish
   pool.wait();
@@ -98,6 +110,15 @@ int main() {
             << elapsed_time_microsec / (known_fens + unknown_fens)
             << " microsec." << std::endl;
 
+  std::cout << "Storing: "
+            << "unknown_" + filename << std::endl;
+  std::ofstream ufile("unknown_" + filename);
+  assert(ufile.is_open());
+  for (auto &fen : unknown_fens_vector)
+    ufile << fen << "\n";
+  ufile.close();
+
+  std::cout << "Closing DB" << std::endl;
   handle = cdbdirect_finalize(handle);
 
   return 0;
