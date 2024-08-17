@@ -61,11 +61,11 @@ sample output:
 ```
 Loading: grob_popular_T60t7_cdb.epd
 Probing 35754929 fens with 32 threads.
-known fens:   7568
-unknown fens: 35747361
-scored moves: 43286
-Required probing time:         27.7956 sec.
-Required time per fen: 0.777391 microsec.
+known fens:   35754622
+unknown fens: 307
+scored moves: 183986252
+Required probing time:         74.5051 sec.
+Required time per fen: 2.08377 microsec.
 ```
 
 ## Building
@@ -89,7 +89,14 @@ These dumps are large (>1TB) and will take several hours to download.
 wget -c -r -nH --cut-dirs=2 --no-parent --reject="index.html*" -e robots=off ftp://chessdb:chessdb@ftp.chessdb.cn/pub/chessdb/chess-20240814
 ```
 
-Note that the file `main.cpp` contains the hard-coded path to the DB `cdbdirect_initialize("/mnt/ssd/chess-20211203/data")`, which should be adjusted as needed.
+Note 1: to be able to handle the database the user should be able to open a
+sufficiently large number of files (more than the typical default of 1024),
+increase that limit e.g. `ulimit -n 102400` for each shell manually or adjust
+the defaults (e.g. `/etc/security/limits.conf`, `/etc/systemd/system.conf`, and/or `/etc/systemd/user.conf`).
+
+Note 2: the files `main.cpp` and `main_threaded.cpp` contain the hard-coded path
+to the DB `cdbdirect_initialize("/mnt/ssd/chess-20240814/data")`, which should
+be adjusted as needed.
 
 ### Compiled rocksdb fork
 

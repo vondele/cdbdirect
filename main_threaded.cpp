@@ -35,13 +35,12 @@ split_chunks(const std::vector<std::string> &fens, int target_chunks) {
 
 int main() {
 
-  std::uintptr_t handle = cdbdirect_initialize("/mnt/ssd/chess-20211203/data");
+  std::uintptr_t handle = cdbdirect_initialize("/mnt/ssd/chess-20240814/data");
 
   // open file with fen/epd
   std::vector<std::string> fens;
-  // std::ifstream file("caissa_sorted_100000.epd");
-  // std::ifstream file("UHO_Lichess_4852_v1.epd");
-  std::string filename = "grob_popular_T60t7_cdb.epd";
+  // std::string filename = "grob_popular_T60t7_cdb.epd";
+  std::string filename = "caissa_sorted_100000.epd";
 
   std::cout << "Loading: " << filename << std::endl;
   std::ifstream file(filename);
@@ -69,11 +68,11 @@ int main() {
 
   size_t num_threads = std::thread::hardware_concurrency();
 
+  auto fens_chunked = split_chunks(fens, num_threads * 20);
+
   std::atomic<size_t> known_fens = 0;
   std::atomic<size_t> unknown_fens = 0;
   std::atomic<size_t> scored_moves = 0;
-
-  auto fens_chunked = split_chunks(fens, num_threads * 20);
 
   // Create a thread pool
   ThreadPool pool(num_threads);
