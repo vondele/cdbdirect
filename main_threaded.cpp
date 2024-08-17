@@ -13,43 +13,28 @@
 
 #include "external/threadpool.hpp"
 
-inline std::vector<std::vector<std::string>>
-split_chunks(const std::vector<std::string> &fens, int target_chunks) {
-  const int chunks_size = (fens.size() + target_chunks - 1) / target_chunks;
-
-  auto begin = fens.begin();
-  auto end = fens.end();
-
-  std::vector<std::vector<std::string>> chunks;
-
-  while (begin != end) {
-    auto next =
-        std::next(begin, std::min(chunks_size,
-                                  static_cast<int>(std::distance(begin, end))));
-    chunks.push_back(std::vector<std::string>(begin, next));
-    begin = next;
-  }
-
-  return chunks;
-}
-
 int main() {
 
   std::uintptr_t handle = cdbdirect_initialize("/mnt/ssd/chess-20240814/data");
 
   // open file with fen/epd
-  std::vector<std::string> fens;
-  // std::string filename = "grob_popular_T60t7_cdb.epd";
+  std::vector<std::vector<std::string>> fens_chunked;
+  size_t num_threads = std::thread::hardware_concurrency();
+  fens_chunked.resize(num_threads * 20);
+
+  // std::string filename = "/mnt/ssd/pgns/elite/Lichess Elite Database/elite20.epd";
   std::string filename = "caissa_sorted_100000.epd";
 
   std::cout << "Loading: " << filename << std::endl;
   std::ifstream file(filename);
   assert(file.is_open());
   std::string line;
+  size_t nfen = 0;
   while (std::getline(file, line)) {
 
     // Retain just the first 4 fields, no move counters etc
-    // fens must also have `-` for the ep if no legal ep move is possible (including pinned pawns).
+    // fens must also have `-` for the ep if no legal ep move is possible
+    // (including pinned pawns).
     std::istringstream iss(line);
 
     std::string word;
@@ -62,14 +47,11 @@ int main() {
       fen += word;
       wordCount++;
     }
-    fens.push_back(fen);
+    nfen++;
+    fens_chunked[nfen % fens_chunked.size()].push_back(fen);
   }
 
   file.close();
-
-  size_t num_threads = std::thread::hardware_concurrency();
-
-  auto fens_chunked = split_chunks(fens, num_threads * 20);
 
   std::atomic<size_t> known_fens = 0;
   std::atomic<size_t> unknown_fens = 0;
@@ -78,8 +60,8 @@ int main() {
   // Create a thread pool
   ThreadPool pool(num_threads);
 
-  std::cout << "Probing " << fens.size() << " fens with " << num_threads
-            << " threads." << std::endl;
+  std::cout << "Probing " << nfen << " fens with " << num_threads << " threads."
+            << std::endl;
   auto t_start = std::chrono::high_resolution_clock::now();
   for (const auto &chunk : fens_chunked)
     pool.enqueue(

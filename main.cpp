@@ -22,7 +22,8 @@ int main() {
   while (std::getline(file, line)) {
 
     // Retain just the first 4 fields, no move counters etc
-    // fens must also have `-` for the ep if no legal ep move is possible (including pinned pawns).
+    // fens must also have `-` for the ep if no legal ep move is possible
+    // (including pinned pawns).
     std::istringstream iss(line);
 
     std::string word;
