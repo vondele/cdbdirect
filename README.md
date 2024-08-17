@@ -7,6 +7,8 @@ Even though API access to cdb is easily possible (see e.g. [cdbexplore](https://
 
 ## Usage
 
+### Binaries
+
 The PoC code just probes the local copy of cdb and prints the ranked moves with
 their scores for all fens.  in a specific file. Note that fens should have have
 `-` for the ep if no legal ep move is possible (including pinned pawns), and
@@ -71,6 +73,19 @@ scored moves: 183986252
 Required probing time:         74.5051 sec.
 Required time per fen: 2.08377 microsec.
 ```
+
+### Interface
+
+The interface to probe has been keept very simple, with only 3 functions exposed by `cdbdirect.h`
+
+```
+std::uintptr_t cdbdirect_initialize(const std::string &path);
+std::uintptr_t cdbdirect_finalize(std::uintptr_t handle);
+std::vector<std::pair<std::string, int>> cdbdirect_get(std::uintptr_t handle,
+                                                       const std::string &fen);
+```
+
+See the `Makefile` for how a tool can link to the `libcdbdirect.a` library.
 
 ## Building
 
