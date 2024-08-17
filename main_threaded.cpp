@@ -17,16 +17,13 @@
 int main() {
 
   std::uintptr_t handle = cdbdirect_initialize("/mnt/ssd/chess-20240814/data");
+  std::string filename = "caissa_sorted_100000.epd";
+
+  size_t num_threads = std::thread::hardware_concurrency();
 
   // open file with fen/epd
   std::vector<std::vector<std::string>> fens_chunked;
-  size_t num_threads = std::thread::hardware_concurrency();
   fens_chunked.resize(num_threads * 20);
-
-  // std::string filename = "/mnt/ssd/pgns/elite/Lichess Elite
-  // Database/elite20.epd"; std::string filename = "caissa_sorted_100000.epd";
-  std::string filename = "caissa_all.epd";
-
   std::cout << "Loading: " << filename << std::endl;
   std::ifstream file(filename);
   assert(file.is_open());
@@ -55,6 +52,7 @@ int main() {
 
   file.close();
 
+  // keep a list of unknown fens to store later
   std::mutex unknown_fens_vector_mutex;
   std::vector<std::string> unknown_fens_vector;
   auto add_unknown = [&unknown_fens_vector,
@@ -70,6 +68,7 @@ int main() {
   // Create a thread pool
   ThreadPool pool(num_threads);
 
+  // start probing
   std::cout << "Probing " << nfen << " fens with " << num_threads << " threads."
             << std::endl;
   auto t_start = std::chrono::high_resolution_clock::now();
@@ -110,14 +109,16 @@ int main() {
             << elapsed_time_microsec / (known_fens + unknown_fens)
             << " microsec." << std::endl;
 
+  // store unknown fens
   std::cout << "Storing: "
-            << "unknown_" + filename << std::endl;
-  std::ofstream ufile("unknown_" + filename);
+            << "unknown.epd" << std::endl;
+  std::ofstream ufile("unknown.epd");
   assert(ufile.is_open());
   for (auto &fen : unknown_fens_vector)
     ufile << fen << "\n";
   ufile.close();
 
+  // Close DB
   std::cout << "Closing DB" << std::endl;
   handle = cdbdirect_finalize(handle);
 
