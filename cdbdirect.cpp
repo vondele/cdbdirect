@@ -8,8 +8,6 @@
 
 #include "rocksdb/db.h"
 #include "rocksdb/options.h"
-#include "rocksdb/table.h"
-#include "rocksdb/filter_policy.h"
 
 #include "cdbdirect.h"
 #include "fen2cdb.h"
@@ -19,13 +17,8 @@ using namespace TERARKDB_NAMESPACE;
 // Initialize the DB given a path, and return a handle for later use
 std::uintptr_t cdbdirect_initialize(const std::string &path) {
 
-  BlockBasedTableOptions table_options;
-  table_options.block_cache = NewLRUCache(4 * 1024 * 1024 * 1024LL);
-  table_options.filter_policy.reset(NewBloomFilterPolicy(15, false));
-  table_options.block_size = 64 * 1024;
   Options options;
   options.IncreaseParallelism();
-  options.table_factory.reset(NewBlockBasedTableFactory(table_options));
 
   DB *db;
 
