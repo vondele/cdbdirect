@@ -76,7 +76,7 @@ Required time per fen: 2.08377 microsec.
 
 ### Interface
 
-The interface to probe has been keept very simple, with only 3 functions exposed by `cdbdirect.h`
+The interface to probe has been kept very simple, with only 3 functions exposed by `cdbdirect.h`
 
 ```
 std::uintptr_t cdbdirect_initialize(const std::string &path);
