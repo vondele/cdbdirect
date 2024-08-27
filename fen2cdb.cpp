@@ -64,6 +64,7 @@ For more information, please refer to <https://unlicense.org>
 
 #include <cstring>
 #include <string>
+#include <stdlib.h>
 
 #include <iomanip>
 #include <iostream>
@@ -427,12 +428,8 @@ std::string hex2bin(const std::string &hex) {
   bin.reserve(hex.size() / 2);
 
   for (size_t i = 0; i < hex.size(); i += 2) {
-    // Take two hex digits and convert to a byte
-    std::stringstream ss;
-    ss << std::hex << hex.substr(i, 2);
-    unsigned int byte;
-    ss >> byte;
-    bin.push_back(static_cast<char>(byte));
+    char byte = (char) strtol(hex.substr(i, 2).c_str(), NULL, 16);
+    bin.push_back(byte);
   }
 
   return bin;
