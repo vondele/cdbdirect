@@ -12,7 +12,7 @@
 
 int main() {
 
-  std::uintptr_t handle = cdbdirect_initialize("/mnt/ssd/chess-20240814/data");
+  std::uintptr_t handle = cdbdirect_initialize(CHESSDB_PATH);
 
   // open file with fen/epd
   std::ifstream file("caissa_sorted_100000.epd");
