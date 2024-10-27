@@ -108,14 +108,10 @@ These dumps are large (>1TB) and will take several hours to download.
 wget -c -r -nH --cut-dirs=2 --no-parent --reject="index.html*" -e robots=off ftp://chessdb:chessdb@ftp.chessdb.cn/pub/chessdb/chess-20240814
 ```
 
-Note 1: to be able to handle the database the user should be able to open a
+Note: to be able to handle the database the user should be able to open a
 sufficiently large number of files (more than the typical default of 1024),
 increase that limit e.g. `ulimit -n 102400` for each shell manually or adjust
 the defaults (e.g. `/etc/security/limits.conf`, `/etc/systemd/system.conf`, and/or `/etc/systemd/user.conf`).
-
-Note 2: the files `main.cpp` and `main_threaded.cpp` contain the hard-coded path
-to the DB `cdbdirect_initialize("/mnt/ssd/chess-20240814/data")`, which should
-be adjusted as needed.
 
 ### Compiled rocksdb fork
 
@@ -133,6 +129,5 @@ cd terarkdb
 ./build.sh
 ```
 
-After building, ensure this repo's Makefile variable `TERARKDBROOT` points to `/the/full/path/of/terarkdb/`
-
-
+After building, ensure this repo's Makefile variables `TERARKDBROOT` and `CHESSDB_PATH` point to `/the/full/path/of/terarkdb/`
+and the path of the DB dump, respectively.

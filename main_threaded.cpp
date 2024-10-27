@@ -16,7 +16,7 @@
 
 int main() {
 
-  std::uintptr_t handle = cdbdirect_initialize("/mnt/ssd/chess-20240814/data");
+  std::uintptr_t handle = cdbdirect_initialize(CHESSDB_PATH);
   std::string filename = "caissa_sorted_100000.epd";
 
   size_t num_threads = std::thread::hardware_concurrency();

@@ -1,6 +1,9 @@
 # Needs to point to the root directory of git tree containing a compiled version of a specific fork of rocksDB (see README.md)
 TERARKDBROOT = /home/vondele/chess/noob/terarkdb
 
+# Needs to point to the path of the cdb dump
+CHESSDB_PATH = /mnt/ssd/chess-20240814/data
+
 # example executables
 EXE1 = cdbdirect
 EXE2 = cdbdirect_threaded
@@ -18,8 +21,8 @@ HEADERS = $(LIBHEADER) fen2cdb.h external/threadpool.hpp
 
 # tools
 CXX = g++
-CXXFLAGS = -O3 -g -Wall -Werror  -march=native -fno-omit-frame-pointer -fno-inline
-CXXFLAGS = -O3 -g -Wall -Werror  -march=native
+CXXFLAGS = -O3 -g -Wall -Werror -march=native -fno-omit-frame-pointer -fno-inline
+CXXFLAGS += -DCHESSDB_PATH=\"$(CHESSDB_PATH)\"
 AR = ar
 ARFLAGS = rcs
 
