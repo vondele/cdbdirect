@@ -37,6 +37,9 @@ int main() {
       wordCount++;
     }
 
+    if (wordCount < 4)
+      continue;
+
     // start fen manipulation and DB access.
     std::cout << "-------------------------------------------------------------"
               << "\n";

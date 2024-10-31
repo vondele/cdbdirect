@@ -46,6 +46,8 @@ int main() {
       fen += word;
       wordCount++;
     }
+    if (wordCount < 4)
+      continue;
     nfen++;
     fens_chunked[nfen % fens_chunked.size()].push_back(fen);
   }
