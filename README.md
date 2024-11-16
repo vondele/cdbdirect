@@ -76,10 +76,11 @@ Required time per fen: 2.08377 microsec.
 
 ### Interface
 
-The interface to probe has been kept very simple, with only 3 functions exposed by `cdbdirect.h`
+The interface to probe has been kept very simple, with only 4 functions exposed by `cdbdirect.h`
 
 ```
 std::uintptr_t cdbdirect_initialize(const std::string &path);
+std::uint64_t cdbdirect_size(std::uintptr_t handle);
 std::uintptr_t cdbdirect_finalize(std::uintptr_t handle);
 std::vector<std::pair<std::string, int>> cdbdirect_get(std::uintptr_t handle,
                                                        const std::string &fen);
@@ -103,7 +104,7 @@ A suitably prepared dump of the database.
 
 These dumps are large (>1TB) and will take several hours to download.
 
-* The following dump contains >40B chess positions
+* The following dump contains 44.3B chess positions
 ```
 wget -c -r -nH --cut-dirs=2 --no-parent --reject="index.html*" -e robots=off ftp://chessdb:chessdb@ftp.chessdb.cn/pub/chessdb/chess-20240814
 ```

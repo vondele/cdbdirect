@@ -16,7 +16,6 @@
 
 int main() {
 
-  std::uintptr_t handle = cdbdirect_initialize(CHESSDB_PATH);
   std::string filename = "caissa_sorted_100000.epd";
 
   size_t num_threads = std::thread::hardware_concurrency();
@@ -69,6 +68,10 @@ int main() {
 
   // Create a thread pool
   ThreadPool pool(num_threads);
+
+  std::uintptr_t handle = cdbdirect_initialize(CHESSDB_PATH);
+  std::uint64_t size = cdbdirect_size(handle);
+  std::cout << "Opened DB with " << size << " stored positions." << std::endl;
 
   // start probing
   std::cout << "Probing " << nfen << " fens with " << num_threads << " threads."

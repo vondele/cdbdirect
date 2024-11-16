@@ -7,9 +7,9 @@
 #include <vector>
 
 #include "rocksdb/db.h"
+#include "rocksdb/filter_policy.h"
 #include "rocksdb/options.h"
 #include "rocksdb/table.h"
-#include "rocksdb/filter_policy.h"
 
 #include "cdbdirect.h"
 #include "fen2cdb.h"
@@ -35,6 +35,17 @@ std::uintptr_t cdbdirect_initialize(const std::string &path) {
   assert(s.ok());
 
   return reinterpret_cast<std::uintptr_t>(db);
+}
+
+// Return the size of the DB
+std::uint64_t cdbdirect_size(std::uintptr_t handle) {
+
+  DB *db = reinterpret_cast<DB *>(handle);
+
+  std::uint64_t size[1];
+  db->GetIntProperty("rocksdb.estimate-num-keys", size);
+
+  return size[0];
 }
 
 // Finalize the DB
