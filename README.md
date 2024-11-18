@@ -103,9 +103,9 @@ A suitably prepared dump of the database.
 
 These dumps are large (>1TB) and will take several hours to download.
 
-* The following dump contains >40B chess positions
+* The following dump contains 46.5B chess positions
 ```
-wget -c -r -nH --cut-dirs=2 --no-parent --reject="index.html*" -e robots=off ftp://chessdb:chessdb@ftp.chessdb.cn/pub/chessdb/chess-20240814
+wget -c -r -nH --cut-dirs=2 --no-parent --reject="index.html*" -e robots=off ftp://chessdb:chessdb@ftp.chessdb.cn/pub/chessdb/chess-20241114
 ```
 
 Note: to be able to handle the database the user should be able to open a
