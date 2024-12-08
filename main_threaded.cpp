@@ -14,10 +14,13 @@
 
 #include "external/threadpool.hpp"
 
-int main() {
+int main(int argc, char *argv[]) {
 
   std::uintptr_t handle = cdbdirect_initialize(CHESSDB_PATH);
   std::string filename = "caissa_sorted_100000.epd";
+
+  if (argc > 1)
+    filename = argv[1];
 
   size_t num_threads = std::thread::hardware_concurrency();
 
