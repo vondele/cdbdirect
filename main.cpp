@@ -10,12 +10,18 @@
 
 #include "cdbdirect.h"
 
-int main() {
+int main(int argc, char *argv[]) {
 
   std::uintptr_t handle = cdbdirect_initialize(CHESSDB_PATH);
+  std::string filename = "caissa_sorted_100000.epd";
+
+  if (argc > 1)
+    filename = argv[1];
+
+  std::cout << "Reading FENs from: " << filename << std::endl;
 
   // open file with fen/epd
-  std::ifstream file("caissa_sorted_100000.epd");
+  std::ifstream file(filename);
   assert(file.is_open());
 
   std::string line;
