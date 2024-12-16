@@ -59,6 +59,15 @@ std::uintptr_t cdbdirect_finalize(std::uintptr_t handle) {
   return 0;
 }
 
+// scores outside of [-15000, 15000] are assumed to be (cursed) TB wins or mates
+int backprop_score(int child_score) {
+  if (child_score >= 15000)
+    return -child_score + 1;
+  if (child_score <= -15000)
+    return -child_score - 1;
+  return -child_score;
+}
+
 // Probe the DB, get back a vector of moves containing the known scored moves of
 // cdb fen: a position fen *without move counters* (as they have no meaning in
 // cdb) The result vector contains pairs of moves (algebraic notation) with
@@ -102,7 +111,7 @@ std::vector<std::pair<std::string, int>> cdbdirect_get(std::uintptr_t handle,
       if (pair.first != "a0a0") {
         result.push_back(
             std::make_pair(natural_order ? pair.first : cbgetBWmove(pair.first),
-                           -std::stoi(pair.second)));
+                           backprop_score(std::stoi(pair.second))));
       } else {
         ply = std::stoi(pair.second);
       }
