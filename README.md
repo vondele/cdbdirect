@@ -9,10 +9,10 @@ Even though API access to cdb is easily possible (see e.g. [cdbexplore](https://
 
 ### Binaries
 
-The PoC code just probes the local copy of cdb and prints the ranked moves with
-their scores for all fens.  in a specific file. Note that fens should have have
-`-` for the ep if no legal ep move is possible (including pinned pawns), and
-move counters are ignored. This file is currently hard-coded to
+The single threaded PoC code just probes the local copy of cdb and prints the ranked moves with
+their scores for all fens in a specific file. Note that fens should have
+`-` for the ep if no legal ep move is possible (including pinned pawns), and that
+move counters are ignored. By default the file is assumed to be
 `caissa_sorted_100000.epd` available at
 [caissatrack](https://github.com/robertnurnberg/caissatrack)) :
 
@@ -58,14 +58,17 @@ Required time: 95.791 microsec.
 
 ```
 
-or a threaded example:
+The threaded version of the PoC code looks for fens that are unknown to cdb in
+a specific file, and writes them to `unknown.epd` :
+
 ```
-./cdbdirect_threaded
+./cdbdirect_threaded grob_popular_T60t7_cdb.epd
 ```
 
 sample output:
 ```
 Loading: grob_popular_T60t7_cdb.epd
+Opened DB with 44262943988 stored positions.
 Probing 35754929 fens with 32 threads.
 known fens:   35754622
 unknown fens: 307
