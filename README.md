@@ -107,10 +107,12 @@ A suitably prepared dump of the database.
 
 These dumps are large (>1TB) and will take several hours to download.
 
-* The following dump contains 46.5B chess positions
+* The following (and most recent) dump contains 48.5B chess positions:
 ```
 wget -c -r -nH --cut-dirs=2 --no-parent --reject="index.html*" -e robots=off ftp://chessdb:chessdb@ftp.chessdb.cn/pub/chessdb/chess-20250608
 ```
+
+* Previous dumps can be obtained from [Hugging Face](https://huggingface.co/datasets/robertnurnberg/chessdbcn).
 
 Note: to be able to handle the database the user should be able to open a
 sufficiently large number of files (more than the typical default of 1024),
