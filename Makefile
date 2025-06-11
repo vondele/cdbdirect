@@ -2,7 +2,7 @@
 TERARKDBROOT = /home/vondele/chess/noob/terarkdb
 
 # Needs to point to the path of the cdb dump
-CHESSDB_PATH = /mnt/ssd/chess-20240814/data
+CHESSDB_PATH = /mnt/ssd/chess-20250608/data
 
 # example executables
 EXE1 = cdbdirect
