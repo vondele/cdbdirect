@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 #include <mutex>
 #include <sstream>
 #include <string>
@@ -106,20 +107,27 @@ int main(int argc, char *argv[]) {
   pool.wait();
   auto t_end = std::chrono::high_resolution_clock::now();
 
-  std::cout << "known fens:   " << known_fens << std::endl;
-  std::cout << "unknown fens: " << unknown_fens << std::endl;
-  std::cout << "scored moves: " << scored_moves << std::endl;
+  std::cout << std::fixed << std::setprecision(2);
+  std::cout << "known fens:   " << std::right << std::setw(12) << known_fens
+            << "  ( " << std::right << std::setw(5)
+            << known_fens * 100.0 / nfen << "% )" << std::endl;
+  std::cout << "unknown fens: " << std::right << std::setw(12) << unknown_fens
+            << "  ( " << std::right << std::setw(5)
+            << unknown_fens * 100.0 / nfen << "% )" << std::endl;
+  std::cout << "scored moves: " << std::right << std::setw(12) << scored_moves
+            << "  ( " << std::right
+            << scored_moves / std::max((double)known_fens, 1.0)
+            << " per known fen )" << std::endl;
   double elapsed_time_microsec =
       std::chrono::duration<double, std::micro>(t_end - t_start).count();
-  std::cout << "Required probing time:         "
+  std::cout << "Required probing time: "
             << elapsed_time_microsec / 1000000 << " sec." << std::endl;
   std::cout << "Required time per fen: "
             << elapsed_time_microsec / (known_fens + unknown_fens)
             << " microsec." << std::endl;
 
   // store unknown fens
-  std::cout << "Storing: "
-            << "unknown.epd" << std::endl;
+  std::cout << "Storing: " << "unknown.epd" << std::endl;
   std::ofstream ufile("unknown.epd");
   assert(ufile.is_open());
   for (auto &fen : unknown_fens_vector)
