@@ -59,8 +59,11 @@ std::uintptr_t cdbdirect_finalize(std::uintptr_t handle) {
   return 0;
 }
 
-// scores outside of [-15000, 15000] are assumed to be (cursed) TB wins or mates
+// scores outside of [-15000, 15000] are assumed to be (cursed) TB wins or mates,
+// apart from stalemates, which are encoded with -30001
 int backprop_score(int child_score) {
+  if (child_score == -30001)
+    return 0;
   if (child_score >= 15000)
     return -child_score + 1;
   if (child_score <= -15000)
