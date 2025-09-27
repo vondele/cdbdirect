@@ -59,8 +59,22 @@ std::uintptr_t cdbdirect_finalize(std::uintptr_t handle) {
   return 0;
 }
 
-// scores outside of [-15000, 15000] are assumed to be (cursed) TB wins or 
-// (possibly incorrect) mates, apart from TB draws and stalemates, which are 
+//
+//
+// need to have an interface to just iterate over the positions in the DB, based
+// on:
+// Iterator it = db->NewIterator(ReadOptions());
+// while(it->Valid()) {
+//   assert(it->status().ok());
+//   Slice key = it->key();
+//   Slice value = it->value();
+//   it->Next();
+// }
+//
+//
+
+// scores outside of [-15000, 15000] are assumed to be (cursed) TB wins or
+// (possibly incorrect) mates, apart from TB draws and stalemates, which are
 // both encoded with -30001
 int backprop_score(int child_score) {
   if (child_score == -30001)
