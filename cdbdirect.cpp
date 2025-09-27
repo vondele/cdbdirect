@@ -59,19 +59,39 @@ std::uintptr_t cdbdirect_finalize(std::uintptr_t handle) {
   return 0;
 }
 
-//
-//
-// need to have an interface to just iterate over the positions in the DB, based
-// on:
-// Iterator it = db->NewIterator(ReadOptions());
-// while(it->Valid()) {
-//   assert(it->status().ok());
-//   Slice key = it->key();
-//   Slice value = it->value();
-//   it->Next();
-// }
-//
-//
+/* iterating over the DB could be done like this... needs an interface
+
+int main() {
+  std::uintptr_t handle = cdbdirect_initialize(CHESSDB_PATH);
+
+  std::uint64_t size = cdbdirect_size(handle);
+  std::cout << "Approximate count: " << size << std::endl;
+
+  DB *db = reinterpret_cast<DB *>(handle);
+
+  Iterator *it = db->NewIterator(ReadOptions());
+  it->SeekToFirst();
+
+  std::uint64_t count = 0;
+  while (it->Valid()) {
+    count++;
+    if (count % 100000 == 0) {
+      std::cout << "Processed " << count << " / " << size << std::endl;
+    }
+    assert(it->status().ok());
+    // Slice key = it->key();
+    // Slice value = it->value();
+    it->Next();
+  }
+
+  std::cout << "Exact count: " << count << std::endl;
+
+  cdbdirect_finalize(handle);
+  return 0;
+}
+
+
+*/
 
 // scores outside of [-15000, 15000] are assumed to be (cursed) TB wins or
 // (possibly incorrect) mates, apart from TB draws and stalemates, which are
