@@ -3,8 +3,9 @@
 #include <chrono>
 #include <cstdint>
 #include <fstream>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
+#include <map>
 #include <mutex>
 #include <sstream>
 #include <string>
@@ -57,13 +58,14 @@ int main(int argc, char *argv[]) {
 
   file.close();
 
-  // keep a list of unknown fens to store later
-  std::mutex unknown_fens_vector_mutex;
-  std::vector<std::string> unknown_fens_vector;
-  auto add_unknown = [&unknown_fens_vector,
-                      &unknown_fens_vector_mutex](const std::string &fen) {
-    const std::lock_guard<std::mutex> lock(unknown_fens_vector_mutex);
-    unknown_fens_vector.push_back(fen);
+  // keep a list of known fens to store later
+  std::mutex known_fens_vector_mutex;
+  std::vector<std::pair<std::string, std::pair<int, int>>> known_fens_vector;
+  auto add_known = [&known_fens_vector, &known_fens_vector_mutex](
+                       const std::string &fen, int e, int p) {
+    const std::lock_guard<std::mutex> lock(known_fens_vector_mutex);
+    known_fens_vector.push_back(std::pair<std::string, std::pair<int, int>>(
+        fen, std::pair<int, int>(e, p)));
   };
 
   std::atomic<size_t> known_fens = 0;
@@ -83,7 +85,7 @@ int main(int argc, char *argv[]) {
   auto t_start = std::chrono::high_resolution_clock::now();
   for (const auto &chunk : fens_chunked)
     pool.enqueue([&handle, &known_fens, &unknown_fens, &scored_moves, &chunk,
-                  &add_unknown]() {
+                  &add_known]() {
       for (auto &fen : chunk) {
 
         std::vector<std::pair<std::string, int>> result =
@@ -92,12 +94,11 @@ int main(int argc, char *argv[]) {
         size_t n_elements = result.size();
         int ply = result[n_elements - 1].second;
 
-        if (ply > -2)
+        if (ply > -2) {
           known_fens++;
-        else {
+          add_known(fen, result[0].second, ply);
+        } else
           unknown_fens++;
-          add_unknown(fen);
-        }
 
         scored_moves += n_elements - 1;
       }
@@ -126,13 +127,47 @@ int main(int argc, char *argv[]) {
             << elapsed_time_microsec / (known_fens + unknown_fens)
             << " microsec." << std::endl;
 
-  // store unknown fens
-  std::cout << "Storing: " << "unknown.epd" << std::endl;
-  std::ofstream ufile("unknown.epd");
-  assert(ufile.is_open());
-  for (auto &fen : unknown_fens_vector)
-    ufile << fen << "\n";
-  ufile.close();
+  std::unordered_map<std::string, std::pair<int, int>> eval_map;
+  eval_map.reserve(known_fens_vector.size());
+  for (auto &tuple : known_fens_vector) {
+    eval_map[tuple.first] = tuple.second;
+  }
+
+  std::ofstream ofile("cdbdirect.epd");
+  assert(ofile.is_open());
+  file.open(filename);
+  while (std::getline(file, line)) {
+    std::istringstream iss(line);
+    std::string word, fen;
+    int wordCount = 0;
+    while (iss >> word && wordCount < 4) {
+      if (wordCount > 0)
+        fen += " ";
+      fen += word;
+      wordCount++;
+    }
+    if (wordCount < 4)
+      continue;
+
+    auto it = eval_map.find(fen);
+    if (it == eval_map.end()) {
+      ofile << line << std::endl;
+      continue;
+    }
+
+    ofile << line << " ; cdb eval: ";
+    int s = it->second.first;
+    if (std::abs(s) > 25000)
+      ofile << (s > 0 ? "M" : "-M") << 30000 - std::abs(s);
+    else
+      ofile << s;
+    int ply = it->second.second;
+    if (ply >= 0)
+      ofile << ", ply: " << ply;
+    ofile << ";\n";
+  }
+  ofile.close();
+  std::cout << "Known evals written to cdbdirect.epd." << std::endl;
 
   // Close DB
   std::cout << "Closing DB" << std::endl;
