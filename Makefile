@@ -21,7 +21,7 @@ HEADERS = $(LIBHEADER) fen2cdb.h external/threadpool.hpp
 
 # tools
 CXX = g++
-CXXFLAGS = -O3 -g -Wall -Werror -march=native -fno-omit-frame-pointer -fno-inline
+CXXFLAGS = -O3 -g -Wall -march=native -fno-omit-frame-pointer -fno-inline
 CXXFLAGS += -DCHESSDB_PATH=\"$(CHESSDB_PATH)\"
 AR = ar
 ARFLAGS = rcs

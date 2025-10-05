@@ -63,8 +63,8 @@ For more information, please refer to <https://unlicense.org>
 */
 
 #include <cstring>
-#include <string>
 #include <stdlib.h>
+#include <string>
 
 #include <iomanip>
 #include <iostream>
@@ -416,6 +416,7 @@ std::string cbgetBWmove(const std::string &move) {
       else
         BWmove[i] = movestr[i];
     } else {
+      assert(i == 4);
       BWmove[i] = movestr[i];
       BWmove[5] = '\0';
     }
@@ -428,7 +429,7 @@ std::string hex2bin(const std::string &hex) {
   bin.reserve(hex.size() / 2);
 
   for (size_t i = 0; i < hex.size(); i += 2) {
-    char byte = (char) strtol(hex.substr(i, 2).c_str(), NULL, 16);
+    char byte = (char)strtol(hex.substr(i, 2).c_str(), NULL, 16);
     bin.push_back(byte);
   }
 
