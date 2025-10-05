@@ -28,7 +28,7 @@ ARFLAGS = rcs
 
 # includes and flags to be build the lib
 INCFLAGS = -I$(TERARKDBROOT)/output/include -I$(TERARKDBROOT)/third-party/terark-zip/src -I$(TERARKDBROOT)/include
-LDFLAGS = -L$(TERARKDBROOT)/output/lib -flto
+LDFLAGS = -L$(TERARKDBROOT)/output/lib -flto=auto
 LIBS = -lterarkdb -lterark-zip-r -lboost_fiber -lboost_context -ltcmalloc -pthread -lgcc -lrt -ldl -ltbb -laio -lgomp -lsnappy -llz4 -lz -lbz2 -latomic
 
 .PHONY = all lib clean format
