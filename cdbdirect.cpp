@@ -10,6 +10,7 @@
 #include "rocksdb/filter_policy.h"
 #include "rocksdb/options.h"
 #include "rocksdb/table.h"
+#include "table/terark_zip_table.h"
 
 #include "cdbdirect.h"
 #include "fen2cdb.h"
@@ -19,12 +20,18 @@ using namespace TERARKDB_NAMESPACE;
 // Initialize the DB given a path, and return a handle for later use
 std::uintptr_t cdbdirect_initialize(const std::string &path) {
 
+  TerarkZipTableOptions tzt_options;
+  // TerarkZipTable requires a temp directory other than data directory, a slow
+  // device is acceptable
+  tzt_options.localTempDir = "/tmp";
+
   BlockBasedTableOptions table_options;
   table_options.block_cache = NewLRUCache(32 * 1024 * 1024 * 1024LL);
   // table_options.no_block_cache = true;
   Options options;
   options.IncreaseParallelism();
-  options.table_factory.reset(NewBlockBasedTableFactory(table_options));
+  options.table_factory.reset(
+      NewTerarkZipTableFactory(tzt_options, options.table_factory));
 
   DB *db;
 
