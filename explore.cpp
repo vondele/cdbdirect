@@ -97,12 +97,15 @@ std::vector<RangeStorage> BuildRangesFromSSTs(DB *db, size_t num_threads) {
   // Turn into non-overlapping ranges
   std::vector<RangeStorage> merged;
   for (size_t i = 0; i < files.size(); ++i) {
-    merged.push_back(
-        RangeStorage(files[i].smallestkey,
-                     (i + 1 == files.size())
-                         ? last_key_str // TODO increase by 1, eg. add "\0"
-                         : files[i + 1].smallestkey));
+    merged.push_back(RangeStorage(
+        files[i].smallestkey,
+        (i + 1 == files.size())
+            ? last_key_str + "z" // add something, so the last key is included
+            : files[i + 1].smallestkey));
   }
+
+  std::cout << "Compare: " << cmp->Compare(last_key_str, merged.back().limit)
+            << std::endl;
 
   size_t num_ranges = std::min(num_threads, merged.size());
   std::vector<RangeStorage> out;
