@@ -63,7 +63,7 @@ std::uintptr_t cdbdirect_finalize(std::uintptr_t handle) {
 
 std::atomic<size_t> count(0);
 
-void IterateRange(DB *db, const Range &range) {
+void IterateRange(DB *db, const RangeStorage &range) {
 
   std::unique_ptr<Iterator> it(db->NewIterator(ReadOptions()));
   const Comparator *cmp = db->GetOptions().comparator;
@@ -78,7 +78,7 @@ void IterateRange(DB *db, const Range &range) {
 //
 // just split the full range in non-overlapping ranges based on SST files
 //
-std::vector<Range> BuildRangesFromSSTs(DB *db, size_t num_threads) {
+std::vector<RangeStorage> BuildRangesFromSSTs(DB *db, size_t num_threads) {
 
   std::unique_ptr<Iterator> it(db->NewIterator(ReadOptions()));
   it->SeekToLast();
@@ -95,23 +95,24 @@ std::vector<Range> BuildRangesFromSSTs(DB *db, size_t num_threads) {
             });
 
   // Turn into non-overlapping ranges
-  std::vector<Range> merged;
+  std::vector<RangeStorage> merged;
   for (size_t i = 0; i < files.size(); ++i) {
     merged.push_back(
-        Range(files[i].smallestkey,
-              (i + 1 == files.size())
-                  ? last_key_str // TODO increase by 1, eg. add "\0"
-                  : files[i + 1].smallestkey));
+        RangeStorage(files[i].smallestkey,
+                     (i + 1 == files.size())
+                         ? last_key_str // TODO increase by 1, eg. add "\0"
+                         : files[i + 1].smallestkey));
   }
 
   size_t num_ranges = std::min(num_threads, merged.size());
-  std::vector<Range> out;
+  std::vector<RangeStorage> out;
   size_t per_range = merged.size() / num_ranges;
   size_t remainder = merged.size() % num_ranges;
   size_t idx = 0;
   for (size_t i = 0; i < num_ranges; ++i) {
     size_t chunk = per_range + (i < remainder ? 1 : 0);
-    Range r = Range(merged[idx].start, merged[idx + chunk - 1].limit);
+    RangeStorage r =
+        RangeStorage(merged[idx].start, merged[idx + chunk - 1].limit);
     out.push_back(r);
     idx += chunk;
   }
@@ -126,7 +127,7 @@ int main() {
 
   DB *db = reinterpret_cast<DB *>(handle);
 
-  const size_t num_threads = 16;
+  const size_t num_threads = 32;
   auto ranges = BuildRangesFromSSTs(db, num_threads);
 
   std::vector<std::thread> workers;
