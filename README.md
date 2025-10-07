@@ -130,7 +130,7 @@ the defaults (e.g. `/etc/security/limits.conf`, `/etc/systemd/system.conf`, and/
 On Ubuntu, install the needed prerequisites:
 
 ```
-sudo apt-get install libboost-fiber-dev libgoogle-perftools-dev libtbb-dev libaio-dev liblz4-dev libsnappy-dev zlib1g-dev libbz2-dev libgflags-dev
+sudo apt-get install libboost-fiber-dev libtbb-dev autoconf cmake build-essential curl git
 ```
 
 Clone noobpwnftw's terakdb repo and build it
