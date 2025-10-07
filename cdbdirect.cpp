@@ -113,37 +113,25 @@ int backprop_score(int child_score) {
   return -child_score;
 }
 
-// Probe the DB, get back a vector of moves containing the known scored moves of
-// cdb fen: a position fen *without move counters* (as they have no meaning in
-// cdb) The result vector contains pairs of moves (algebraic notation) with
-// their score, sorted. The result vector always contains as last element one
-// special move a0a0 with score: -2  (pos not in db), -1  (no known distance to
-// root)
-// >=0 (shortest known distance to root)
-std::vector<std::pair<std::string, int>> cdbdirect_get(std::uintptr_t handle,
-                                                       const std::string &fen) {
+std::string key_to_fen(const std::string &key, bool natural_order) {
+  // key starts with 'h' followed by binary hexfen
+  assert(key.size() > 1);
+  assert(key[0] == 'h');
+  auto hexfen = bin2hex(key.substr(1));
+  auto fen = cbhexfen2fen(hexfen);
+  auto BWfen = cbgetBWfen(fen);
+  std::string BWhexfen = cbfen2hexfen(BWfen);
+  return (hexfen < BWhexfen) == natural_order ? fen : BWfen;
+}
 
-  DB *db = reinterpret_cast<DB *>(handle);
+// turn a cdb value into a chess thingy
+std::vector<std::pair<std::string, int>>
+value_to_scoredMoves(const std::string &value, bool natural_order) {
 
   std::vector<std::pair<std::string, int>> result;
 
-  // The fen or its black-white mirrored equivalent is to be probed,
-  // depending on their hexfen order
-  std::string inputfen = fen;
-  std::string hexfen = cbfen2hexfen(inputfen);
-  std::string BWfen = cbgetBWfen(inputfen);
-  std::string BWhexfen = cbfen2hexfen(BWfen);
-  bool natural_order = hexfen < BWhexfen;
-
-  // generate the binary fen with prefix 'h' has key
-  std::string key = 'h' + hex2bin(natural_order ? hexfen : BWhexfen);
-
-  // get value (prefix binary fen by 'h')
-  std::string value;
-  Status s = db->Get(ReadOptions(), key, &value);
-
   // If we have a hit decode the answer
-  if (s.ok()) {
+  if (!value.empty()) {
     // decode the value to scoredMoves
     std::vector<StrPair> scoredMoves;
     get_hash_values(value, scoredMoves);
@@ -178,4 +166,40 @@ std::vector<std::pair<std::string, int>> cdbdirect_get(std::uintptr_t handle,
   }
 
   return result;
+}
+
+// Probe the DB, get back a vector of moves containing the known scored moves of
+// cdb fen: a position fen *without move counters* (as they have no meaning in
+// cdb) The result vector contains pairs of moves (algebraic notation) with
+// their score, sorted. The result vector always contains as last element one
+// special move a0a0 with score: -2  (pos not in db), -1  (no known distance to
+// root)
+// >=0 (shortest known distance to root)
+std::vector<std::pair<std::string, int>> cdbdirect_get(std::uintptr_t handle,
+                                                       const std::string &fen) {
+
+  DB *db = reinterpret_cast<DB *>(handle);
+
+  // The fen or its black-white mirrored equivalent is to be probed,
+  // depending on their hexfen order
+  std::string inputfen = fen;
+  std::string hexfen = cbfen2hexfen(inputfen);
+  std::string BWfen = cbgetBWfen(inputfen);
+  std::string BWhexfen = cbfen2hexfen(BWfen);
+  bool natural_order = hexfen < BWhexfen;
+
+  // generate the binary fen with prefix 'h' has key
+  std::string key = 'h' + hex2bin(natural_order ? hexfen : BWhexfen);
+
+  // get value (prefix binary fen by 'h')
+  std::string value;
+  Status s = db->Get(ReadOptions(), key, &value);
+
+  // If we have a hit decode the answer
+  if (s.ok()) {
+    return value_to_scoredMoves(value, natural_order);
+  }
+
+  // signal failed probe.
+  return value_to_scoredMoves("", natural_order);
 }

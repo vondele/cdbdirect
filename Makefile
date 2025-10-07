@@ -6,8 +6,10 @@ CHESSDB_PATH = /mnt/ssd/chess-20250608/data
 
 # example executables
 EXE1 = cdbdirect
+EXE1 = explore
 EXE2 = cdbdirect_threaded
 EXESRC1 = main.cpp
+EXESRC1 = explore.cpp
 EXESRC2 = main_threaded.cpp
 
 # library to be used by the exe and other applications
@@ -38,10 +40,10 @@ all: $(EXE1) $(EXE2) lib
 lib: $(LIBTARGET)
 
 $(EXE1): $(EXESRC1) $(LIBTARGET) $(HEADERS)
-	$(CXX) $(CXXFLAGS) -o $(EXE1) $(EXESRC1) $(LIBTARGET) $(LDFLAGS) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(INCFLAGS) -o $(EXE1) $(EXESRC1) $(LIBTARGET) $(LDFLAGS) $(LIBS)
 
 $(EXE2): $(EXESRC2) $(LIBTARGET) $(HEADERS)
-	$(CXX) $(CXXFLAGS) -o $(EXE2) $(EXESRC2) $(LIBTARGET) $(LDFLAGS) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(INCFLAGS) -o $(EXE2) $(EXESRC2) $(LIBTARGET) $(LDFLAGS) $(LIBS)
 
 %.o: %.cpp $(HEADERS)
 	$(CXX) $(CXXFLAGS) $(INCFLAGS) -c $< -o $@
