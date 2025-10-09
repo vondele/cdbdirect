@@ -110,8 +110,8 @@ int main(int argc, char *argv[]) {
 
   std::cout << std::fixed << std::setprecision(2);
   std::cout << "known fens:   " << std::right << std::setw(12) << known_fens
-            << "  ( " << std::right << std::setw(5)
-            << known_fens * 100.0 / nfen << "% )" << std::endl;
+            << "  ( " << std::right << std::setw(5) << known_fens * 100.0 / nfen
+            << "% )" << std::endl;
   std::cout << "unknown fens: " << std::right << std::setw(12) << unknown_fens
             << "  ( " << std::right << std::setw(5)
             << unknown_fens * 100.0 / nfen << "% )" << std::endl;
@@ -121,8 +121,8 @@ int main(int argc, char *argv[]) {
             << " per known fen )" << std::endl;
   double elapsed_time_microsec =
       std::chrono::duration<double, std::micro>(t_end - t_start).count();
-  std::cout << "Required probing time: "
-            << elapsed_time_microsec / 1000000 << " sec." << std::endl;
+  std::cout << "Required probing time: " << elapsed_time_microsec / 1000000
+            << " sec." << std::endl;
   std::cout << "Required time per fen: "
             << elapsed_time_microsec / (known_fens + unknown_fens)
             << " microsec." << std::endl;
