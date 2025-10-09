@@ -532,6 +532,7 @@ int get_hash_values(const Bytes &slice, std::vector<StrPair> &values) {
   if (slice.empty() || slice.size() % (2 * sizeof(int16_t)) != 0) {
     return 0;
   }
+  values.reserve(slice.size() / (2 * sizeof(int16_t)));
   for (size_t i = 0; i < slice.size(); i += 2 * sizeof(int16_t)) {
     std::string elem_field, elem_value;
     if (decode_hash_value(Bytes(slice.data() + i, 2 * sizeof(int16_t)),
