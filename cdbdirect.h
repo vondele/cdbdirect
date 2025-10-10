@@ -9,8 +9,9 @@
 std::uintptr_t cdbdirect_initialize(const std::string &path);
 std::uint64_t cdbdirect_size(std::uintptr_t handle);
 std::uintptr_t cdbdirect_finalize(std::uintptr_t handle);
-std::vector<std::pair<std::string, int>> cdbdirect_get(std::uintptr_t handle,
-                                                       const std::string &fen);
+std::vector<std::pair<std::string, int>>
+cdbdirect_get(std::uintptr_t handle, const std::string &fen,
+              bool ply_cosmetics = true);
 void cdbdirect_apply(
     std::uintptr_t handle, size_t num_threads,
     const std::function<bool(const std::string &,
