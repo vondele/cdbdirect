@@ -81,14 +81,14 @@ int main() {
   std::cout << "  Total scored moves: " << count_moves.load() << "\n";
 
   std::ofstream file_ply("min_ply_histogram.txt");
-  for (int i = 0; i < min_ply_histogram.size(); ++i) {
+  for (size_t i = 0; i < min_ply_histogram.size(); ++i) {
     file_ply << i << " " << min_ply_histogram[i].load() << "\n";
   }
   file_ply.close();
 
   std::ofstream file_score("score_histogram.txt");
-  for (int i = 0; i < score_histogram.size(); ++i) {
-    file_score << i - 32768 << " " << score_histogram[i].load() << "\n";
+  for (size_t i = 0; i < score_histogram.size(); ++i) {
+    file_score << int(i) - 32768 << " " << score_histogram[i].load() << "\n";
   }
   file_score.close();
 
