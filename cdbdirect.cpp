@@ -21,6 +21,8 @@ std::uintptr_t cdbdirect_initialize(const std::string &path) {
   // TerarkZipTable requires a temp directory other than data directory, a slow
   // device is acceptable
   tzt_options.localTempDir = "/tmp";
+  tzt_options.minPreadLen = -1;
+  tzt_options.warmUpIndexOnOpen = false;
 
   BlockBasedTableOptions table_options;
   table_options.block_cache = NewLRUCache(32 * 1024 * 1024 * 1024LL);
