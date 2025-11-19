@@ -117,7 +117,24 @@ hf download --repo-type dataset robertnurnberg/chessdbcn --local-dir . --cache-d
 * Alternatively, and slower, at the chessdb source:
 
 ```
-wget -c -r -nH --cut-dirs=2 --no-parent --reject="index.html*" -e robots=off ftp://chessdb:chessdb@ftp.chessdb.cn/pub/chessdb/chess-20250608
+wget -c -r -nH --cut-dirs=2 --no-parent --reject="index.html*" -e robots=off ftp://chessdb:chessdb@ftp.chessdb.cn/pub/chessdb/chess-20251117
+```
+
+* Or faster, with rclone:
+
+```
+rclone copy chessdb:/pub/chessdb/chess-20251117 ./chess-20251117     --multi-thread-streams=7  --multi-thread-cutoff=1     --no-traverse     --exclude "index.html*"     --progress
+```
+
+After creating a config for the remote chessdb:
+
+```txt
+    Type: ftp
+    Host: ftp.chessdb.cn
+    User: chessdb
+    Pass: chessdb
+    Explicit TLS: false
+
 ```
 
 Note: to be able to handle the database the user should be able to open a
