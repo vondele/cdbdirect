@@ -153,7 +153,7 @@ sudo apt-get install libboost-fiber-dev libtbb-dev autoconf cmake build-essentia
 Clone noobpwnftw's terakdb repo and build it
 
 ```
-git clone https://github.com/noobpwnftw/terarkdb.git
+git clone --depth 1 https://github.com/noobpwnftw/terarkdb.git
 cd terarkdb
 ./build.sh
 ```
