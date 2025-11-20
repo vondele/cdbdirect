@@ -16,13 +16,13 @@ move counters are ignored. By default the file is assumed to be
 `caissa_sorted_100000.epd` available at
 [caissatrack](https://github.com/robertnurnberg/caissatrack)) :
 
-```
+```bash
 ./cdbdirect
 ```
 
 sample output:
 
-```
+```txt
 -------------------------------------------------------------
 Probing: rnbqkb1r/p1pp2pp/1p3n2/5p2/2P5/2NP4/PP3PPP/R1BQKBNR w KQkq -
     f1e2 : 96
@@ -61,13 +61,13 @@ Required time: 95.791 microsec.
 The threaded version of the PoC code looks for fens that are unknown to cdb in
 a specific file, and writes them to `unknown.epd` :
 
-```
+```bash
 ./cdbdirect_threaded grob_popular_T60t7_cdb.epd
 ```
 
 sample output:
 
-```
+```txt
 Loading: grob_popular_T60t7_cdb.epd
 Opened DB with 44262943988 stored positions.
 Probing 35754929 fens with 32 threads.
@@ -82,7 +82,7 @@ Required time per fen: 2.08377 microsec.
 
 The interface to probe has been kept very simple, with only 4 functions exposed by `cdbdirect.h`
 
-```
+```c++
 std::uintptr_t cdbdirect_initialize(const std::string &path);
 std::uint64_t cdbdirect_size(std::uintptr_t handle);
 std::uintptr_t cdbdirect_finalize(std::uintptr_t handle);
@@ -96,7 +96,7 @@ See the `Makefile` for how a tool can link to the `libcdbdirect.a` library.
 
 Once prerequisites are available building is as simple as
 
-```
+```bash
 make -j
 ```
 
@@ -110,20 +110,20 @@ These dumps are large (~1TB, >50B positions) and might take several hours to dow
 
 * Dumps can be obtained from [Hugging Face](https://huggingface.co/datasets/robertnurnberg/chessdbcn).
 
-```
+```bash
 hf download --repo-type dataset robertnurnberg/chessdbcn --local-dir . --cache-dir . --include "chess-20250608/**"
 ```
 
 * Alternatively, and slower, at the chessdb source:
 
-```
+```bash
 wget -c -r -nH --cut-dirs=2 --no-parent --reject="index.html*" -e robots=off ftp://chessdb:chessdb@ftp.chessdb.cn/pub/chessdb/chess-20251115
 ```
 
 * Or faster, with rclone:
 
-```
-rclone copy chessdb:/pub/chessdb/chess-20251115 ./chess-20251115     --multi-thread-streams=7  --multi-thread-cutoff=1     --no-traverse     --exclude "index.html*"     --progress
+```bash
+rclone copy chessdb:/pub/chessdb/chess-20251115 ./chess-20251115  --transfers=10 --checkers=20 --multi-thread-streams=4 --multi-thread-chunk-size=128M --multi-thread-cutoff=0   --no-traverse     --exclude "index.html*"     --progress
 ```
 
 After creating a config for the remote chessdb:
@@ -146,13 +146,13 @@ the defaults (e.g. `/etc/security/limits.conf`, `/etc/systemd/system.conf`, and/
 
 On Ubuntu, install the needed prerequisites:
 
-```
+```bash
 sudo apt-get install libboost-fiber-dev libtbb-dev autoconf cmake build-essential curl git
 ```
 
 Clone noobpwnftw's terakdb repo and build it
 
-```
+```bash
 git clone --depth 1 https://github.com/noobpwnftw/terarkdb.git
 cd terarkdb
 ./build.sh
