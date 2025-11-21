@@ -123,7 +123,7 @@ wget -c -r -nH --cut-dirs=2 --no-parent --reject="index.html*" -e robots=off ftp
 * Or faster, with rclone:
 
 ```bash
-rclone copy chessdb:/pub/chessdb/chess-20251115 ./chess-20251115  --transfers=10 --checkers=20 --multi-thread-streams=4 --multi-thread-chunk-size=128M --multi-thread-cutoff=0   --no-traverse     --exclude "index.html*"     --progress
+rclone copy chessdb:/pub/chessdb/chess-20251115 ./chess-20251115  --transfers=10 --checkers=20 --multi-thread-streams=4 --multi-thread-chunk-size=128M --multi-thread-cutoff=1   --no-traverse     --exclude "index.html*"     --progress
 ```
 
 After creating a config for the remote chessdb:
@@ -137,10 +137,11 @@ After creating a config for the remote chessdb:
 
 ```
 
-Note: to be able to handle the database the user should be able to open a
-sufficiently large number of files (more than the typical default of 1024),
-increase that limit e.g. `ulimit -n 102400` for each shell manually or adjust
-the defaults (e.g. `/etc/security/limits.conf`, `/etc/systemd/system.conf`, and/or `/etc/systemd/user.conf`).
+Note: for an older version of the DB, to be able to handle the database the user
+should be able to open a sufficiently large number of files (more than the
+typical default of 1024), increase that limit e.g. `ulimit -n 102400` for each
+shell manually or adjust the defaults (e.g. `/etc/security/limits.conf`,
+`/etc/systemd/system.conf`, and/or `/etc/systemd/user.conf`).
 
 ### Compiled rocksdb fork
 
