@@ -1,20 +1,38 @@
 #include "cdbdirect.h"
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <string>
 #include <thread>
 
-int main() {
+int main(int argc, char *argv[]) {
   std::uintptr_t handle = cdbdirect_initialize(CHESSDB_PATH);
 
   std::uint64_t db_size = cdbdirect_size(handle);
   std::cout << "DB count: " << db_size << std::endl;
 
+  size_t max_entries = 1'000'000'000UL;
+  if (argc > 1) { // either pass max_entries as integer
+    size_t cli = std::stoull(argv[1]);
+    if (cli > 1 || std::string(argv[1]) == "1") {
+      max_entries = cli;
+      if (max_entries == 1)
+        std::cout << "Use '" << argv[0] << " 1.0' to analyse the whole DB."
+                  << std::endl;
+    } else { // or pass a fraction of total DB, like 0.5 or 1.0
+      double fraction = std::stod(argv[1]);
+      max_entries = std::size_t(fraction * db_size);
+    }
+  }
+  max_entries = std::clamp(max_entries, 0UL, db_size);
+  std::cout << "Analyse the first " << max_entries << " DB entries ..."
+            << std::endl;
+
   // setup of a function that will be called for each entry in the db,
   // multithreaded
-  size_t max_entries = std::min(1'000'000'000UL, db_size);
   std::atomic<size_t> count_total(0);
   std::atomic<size_t> count_have_minply(0);
   std::atomic<size_t> count_have_single(0);
