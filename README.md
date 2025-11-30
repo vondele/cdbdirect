@@ -1,18 +1,27 @@
 # cdbdirect
 
-`cdbdirect` is a proof of concept implementation to directly probe a local copy of a snapshot of the Chess Cloud Database (cdb),
+`cdbdirect` is a proof of concept implementation to directly probe a local copy of a snapshot (aka a dump) of the Chess Cloud Database (cdb),
 which is also [accessible online](https://www.chessdb.cn/queryc_en/).
 
 Even though API access to cdb is easily possible (see e.g. [cdbexplore](https://github.com/vondele/cdbexplore/) or [cdblib](https://github.com/robertnurnberg/cdblib/) for tools that do so), local access can be significantly faster.
 
 ## Usage
 
+### Input format
+
+`cdbdirect` provides PoC codes to either probe a local copy of cdb for a given
+list of fens, or to iterate over a range of positions in the dump.
+The fens must be given in strict [X-FEN](https://en.wikipedia.org/wiki/X-FEN)
+standard notation. That is, fens should have `-` for the ep square if no legal
+ep move is possible (including pinned pawns). Moreover, castling in
+(D)FRC (aka [Chess960](https://en.wikipedia.org/wiki/Chess960)) for the
+outermost rook is still denoted by `KQkq`, while file letters indicate castling
+for an inner rook. Move counters are ignored, and so can be omitted.
+
 ### Binaries
 
-The single threaded PoC code just probes the local copy of cdb and prints the ranked moves with
-their scores for all fens in a specific file. Note that fens should have
-`-` for the ep if no legal ep move is possible (including pinned pawns), and that
-move counters are ignored. By default the file is assumed to be
+The single threaded PoC code `cdbdirect` just probes the local copy of cdb and prints the ranked moves with
+their scores for all fens in a specific file. By default the file is assumed to be
 `caissa_sorted_100000.epd` available at
 [caissatrack](https://github.com/robertnurnberg/caissatrack)) :
 
@@ -58,24 +67,43 @@ Required time: 95.791 microsec.
 
 ```
 
-The threaded version of the PoC code looks for fens that are unknown to cdb in
-a specific file, and writes them to `unknown.epd` :
+The threaded PoC code `cdbdirect_threaded` probes all fens from
+a specific file, and writes their cdb evals to `cdbdirect.epd` :
 
 ```bash
-./cdbdirect_threaded grob_popular_T60t7_cdb.epd
+./cdbdirect_threaded popular_sorted.epd
 ```
 
 sample output:
 
 ```txt
-Loading: grob_popular_T60t7_cdb.epd
-Opened DB with 44262943988 stored positions.
-Probing 35754929 fens with 32 threads.
-known fens:   35754622
-unknown fens: 307
-scored moves: 183986252
-Required probing time:         74.5051 sec.
-Required time per fen: 2.08377 microsec.
+Loading: popular_sorted.epd
+Opened DB with 48454315961 stored positions.
+Probing 655518 fens with 32 threads.
+known fens:         650246  ( 99.20% )
+unknown fens:         5272  (  0.80% )
+scored moves:      4583493  ( 7.05 per known fen )
+Required probing time: 2.35 sec.
+Required time per fen: 3.58 microsec.
+Known evals written to cdbdirect.epd.
+Closing DB
+```
+
+The threaded PoC code `cdbdirect_apply` iterates over the first, say, one
+billion entries of the dump and counts the number of scored moves as well as
+some other statistics.
+
+```bash
+./cdbdirect_apply
+```
+
+sample output:
+
+```txt
+Final count:          1000000000
+  Have min ply:       963835684
+  Have single move:   660194731
+  Total scored moves: 2377568738
 ```
 
 ### Interface
