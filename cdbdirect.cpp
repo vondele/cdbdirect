@@ -245,7 +245,8 @@ std::vector<RangeStorage> BuildRangesFromSSTs(DB *db, size_t num_threads) {
     merged.push_back(RangeStorage(
         files[i].smallestkey,
         (i + 1 == files.size())
-            ? last_key_str + "z" // Adding 'z' to ensure inclusion of last key
+            ? last_key_str +
+                  '\xff' // Adding '0xFF' to ensure inclusion of last key
             : files[i + 1].smallestkey));
   }
 
