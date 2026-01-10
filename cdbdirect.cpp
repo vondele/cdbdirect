@@ -161,7 +161,8 @@ value_to_scoredMoves(const std::string &value, bool natural_order) {
 // root)
 // >=0 (shortest known distance to root)
 std::vector<std::pair<std::string, int>> cdbdirect_get(std::uintptr_t handle,
-                                                       const std::string &fen) {
+                                                       const std::string &fen,
+                                                       bool ply_cosmetics) {
 
   DB *db = reinterpret_cast<DB *>(handle);
 
@@ -184,7 +185,18 @@ std::vector<std::pair<std::string, int>> cdbdirect_get(std::uintptr_t handle,
 
   // If we have a hit decode the answer
   if (s.ok()) {
-    return value_to_scoredMoves(value, natural_order);
+    auto result = value_to_scoredMoves(value, natural_order);
+    if (ply_cosmetics) {
+      size_t n_elements = result.size();
+      int ply = result[n_elements - 1].second;
+      if (ply >= 0) {
+        // align ply value with api output
+        bool black_stm = fen.find(" w ") == std::string::npos;
+        if (black_stm != (ply % 2))
+          result[n_elements - 1].second++;
+      }
+    }
+    return result;
   }
 
   // signal failed probe.
