@@ -37,7 +37,8 @@ std::uintptr_t cdbdirect_initialize(const std::string &path) {
   tzt_options.cacheCapacityBytes = 1 * 1024 * 1024 * 1024LL;
 
   BlockBasedTableOptions table_options;
-  table_options.block_cache = NewLRUCache(32 * 1024 * 1024 * 1024LL);
+  // table_options.block_cache = NewLRUCache(32 * 1024 * 1024 * 1024LL);
+  table_options.block_cache = NewClockCache(32 * 1024 * 1024 * 1024LL);
   // table_options.no_block_cache = true;
   Options options;
   options.IncreaseParallelism();
