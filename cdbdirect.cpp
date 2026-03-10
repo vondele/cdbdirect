@@ -21,9 +21,24 @@ std::uintptr_t cdbdirect_initialize(const std::string &path) {
   // TerarkZipTable requires a temp directory other than data directory, a slow
   // device is acceptable
   tzt_options.localTempDir = "/tmp";
+  tzt_options.warmUpIndexOnOpen = false;
+
+  // minPreadLen=-1, read from mmap
+  // minPreadLen=0, read with pread
+  // cacheCapacityBytes>0, read with pread+O_DIRECT into own page cache
+  // indexCacheRatio is louds cache, precomputed near top level offsets for tree
+  // walk, cpu optimization at the cost of ram with bbt, you just raise
+  // blockcache, which is somewhat equivilent to cacheCapacityBytes iterators,
+  // bbt is entirely sequential, new format is roughly sequential on keys
+  // sequential on values, i.e. just index walk costs
+
+  tzt_options.minPreadLen = 0;
+  tzt_options.indexCacheRatio = 0.000;
+  tzt_options.cacheCapacityBytes = 1 * 1024 * 1024 * 1024LL;
 
   BlockBasedTableOptions table_options;
-  table_options.block_cache = NewLRUCache(32 * 1024 * 1024 * 1024LL);
+  // table_options.block_cache = NewLRUCache(32 * 1024 * 1024 * 1024LL);
+  table_options.block_cache = NewClockCache(32 * 1024 * 1024 * 1024LL);
   // table_options.no_block_cache = true;
   Options options;
   options.IncreaseParallelism();
@@ -165,7 +180,9 @@ std::vector<std::pair<std::string, int>> cdbdirect_get(std::uintptr_t handle,
 
   // get value (prefix binary fen by 'h')
   std::string value;
-  Status s = db->Get(ReadOptions(), key, &value);
+  ReadOptions read_options;
+  read_options.verify_checksums = false;
+  Status s = db->Get(read_options, key, &value);
 
   // If we have a hit decode the answer
   if (s.ok()) {
@@ -197,7 +214,9 @@ void IterateRange(
         &evaluate_entry) {
 
   const Comparator *cmp = db->GetOptions().comparator;
-  std::unique_ptr<Iterator> it(db->NewIterator(ReadOptions()));
+  ReadOptions read_options;
+  read_options.verify_checksums = false;
+  std::unique_ptr<Iterator> it(db->NewIterator(read_options));
 
   for (it->Seek(range.start);
        it->Valid() && (cmp->Compare(it->key(), range.limit) < 0); it->Next()) {
@@ -217,7 +236,9 @@ void IterateRange(
 //
 std::vector<RangeStorage> BuildRangesFromSSTs(DB *db, size_t num_threads) {
 
-  std::unique_ptr<Iterator> it(db->NewIterator(ReadOptions()));
+  ReadOptions read_options;
+  read_options.verify_checksums = false;
+  std::unique_ptr<Iterator> it(db->NewIterator(read_options));
   it->SeekToLast();
   std::string last_key_str = it->key().ToString();
 
@@ -237,7 +258,8 @@ std::vector<RangeStorage> BuildRangesFromSSTs(DB *db, size_t num_threads) {
     merged.push_back(RangeStorage(
         files[i].smallestkey,
         (i + 1 == files.size())
-            ? last_key_str + "z" // Adding 'z' to ensure inclusion of last key
+            ? last_key_str +
+                  '\xff' // Adding '0xFF' to ensure inclusion of last key
             : files[i + 1].smallestkey));
   }
 

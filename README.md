@@ -1,28 +1,37 @@
 # cdbdirect
 
-`cdbdirect` is a proof of concept implementation to directly probe a local copy of a snapshot of the Chess Cloud Database (cdb),
+`cdbdirect` is a proof of concept implementation to directly probe a local copy of a snapshot (aka a dump) of the Chess Cloud Database (cdb),
 which is also [accessible online](https://www.chessdb.cn/queryc_en/).
 
 Even though API access to cdb is easily possible (see e.g. [cdbexplore](https://github.com/vondele/cdbexplore/) or [cdblib](https://github.com/robertnurnberg/cdblib/) for tools that do so), local access can be significantly faster.
 
 ## Usage
 
+### Input format
+
+`cdbdirect` provides PoC codes to either probe a local copy of cdb for a given
+list of fens, or to iterate over a range of positions in the dump.
+The fens must be given in strict [X-FEN](https://en.wikipedia.org/wiki/X-FEN)
+standard notation. That is, fens should have `-` for the ep square if no legal
+ep move is possible (including pinned pawns). Moreover, castling in
+(D)FRC (aka [Chess960](https://en.wikipedia.org/wiki/Chess960)) for the
+outermost rook is still denoted by `KQkq`, while file letters indicate castling
+for an inner rook. Move counters are ignored, and so can be omitted.
+
 ### Binaries
 
-The single threaded PoC code just probes the local copy of cdb and prints the ranked moves with
-their scores for all fens in a specific file. Note that fens should have
-`-` for the ep if no legal ep move is possible (including pinned pawns), and that
-move counters are ignored. By default the file is assumed to be
+The single threaded PoC code `cdbdirect` just probes the local copy of cdb and prints the ranked moves with
+their scores for all fens in a specific file. By default the file is assumed to be
 `caissa_sorted_100000.epd` available at
 [caissatrack](https://github.com/robertnurnberg/caissatrack)) :
 
-```
+```bash
 ./cdbdirect
 ```
 
 sample output:
 
-```
+```txt
 -------------------------------------------------------------
 Probing: rnbqkb1r/p1pp2pp/1p3n2/5p2/2P5/2NP4/PP3PPP/R1BQKBNR w KQkq -
     f1e2 : 96
@@ -58,31 +67,50 @@ Required time: 95.791 microsec.
 
 ```
 
-The threaded version of the PoC code looks for fens that are unknown to cdb in
-a specific file, and writes them to `unknown.epd` :
+The threaded PoC code `cdbdirect_threaded` probes all fens from
+a specific file, and writes their cdb evals to `cdbdirect.epd` :
 
-```
-./cdbdirect_threaded grob_popular_T60t7_cdb.epd
+```bash
+./cdbdirect_threaded popular_sorted.epd
 ```
 
 sample output:
 
+```txt
+Loading: popular_sorted.epd
+Opened DB with 48454315961 stored positions.
+Probing 655518 fens with 32 threads.
+known fens:         650246  ( 99.20% )
+unknown fens:         5272  (  0.80% )
+scored moves:      4583493  ( 7.05 per known fen )
+Required probing time: 2.35 sec.
+Required time per fen: 3.58 microsec.
+Known evals written to cdbdirect.epd.
+Closing DB
 ```
-Loading: grob_popular_T60t7_cdb.epd
-Opened DB with 44262943988 stored positions.
-Probing 35754929 fens with 32 threads.
-known fens:   35754622
-unknown fens: 307
-scored moves: 183986252
-Required probing time:         74.5051 sec.
-Required time per fen: 2.08377 microsec.
+
+The threaded PoC code `cdbdirect_apply` iterates over the first, say, one
+billion entries of the dump and counts the number of scored moves as well as
+some other statistics.
+
+```bash
+./cdbdirect_apply
+```
+
+sample output:
+
+```txt
+Final count:          1000000000
+  Have min ply:       963835684
+  Have single move:   660194731
+  Total scored moves: 2377568738
 ```
 
 ### Interface
 
 The interface to probe has been kept very simple, with only 4 functions exposed by `cdbdirect.h`
 
-```
+```c++
 std::uintptr_t cdbdirect_initialize(const std::string &path);
 std::uint64_t cdbdirect_size(std::uintptr_t handle);
 std::uintptr_t cdbdirect_finalize(std::uintptr_t handle);
@@ -96,7 +124,7 @@ See the `Makefile` for how a tool can link to the `libcdbdirect.a` library.
 
 Once prerequisites are available building is as simple as
 
-```
+```bash
 make -j
 ```
 
@@ -110,33 +138,51 @@ These dumps are large (~1TB, >50B positions) and might take several hours to dow
 
 * Dumps can be obtained from [Hugging Face](https://huggingface.co/datasets/robertnurnberg/chessdbcn).
 
-```
+```bash
 hf download --repo-type dataset robertnurnberg/chessdbcn --local-dir . --cache-dir . --include "chess-20250608/**"
 ```
 
 * Alternatively, and slower, at the chessdb source:
 
-```
-wget -c -r -nH --cut-dirs=2 --no-parent --reject="index.html*" -e robots=off ftp://chessdb:chessdb@ftp.chessdb.cn/pub/chessdb/chess-20250608
+```bash
+wget -c -r -nH --cut-dirs=2 --no-parent --reject="index.html*" -e robots=off ftp://chessdb:chessdb@ftp.chessdb.cn/pub/chessdb/chess-20251115
 ```
 
-Note: to be able to handle the database the user should be able to open a
-sufficiently large number of files (more than the typical default of 1024),
-increase that limit e.g. `ulimit -n 102400` for each shell manually or adjust
-the defaults (e.g. `/etc/security/limits.conf`, `/etc/systemd/system.conf`, and/or `/etc/systemd/user.conf`).
+* Or faster, with rclone:
+
+```bash
+rclone copy chessdb:/pub/chessdb/chess-20251115 ./chess-20251115  --transfers=10 --checkers=20 --multi-thread-streams=4 --multi-thread-chunk-size=128M --multi-thread-cutoff=1   --no-traverse     --exclude "index.html*"     --progress
+```
+
+After creating a config for the remote chessdb:
+
+```txt
+    Type: ftp
+    Host: ftp.chessdb.cn
+    User: chessdb
+    Pass: chessdb
+    Explicit TLS: false
+
+```
+
+Note: for an older version of the DB, to be able to handle the database the user
+should be able to open a sufficiently large number of files (more than the
+typical default of 1024), increase that limit e.g. `ulimit -n 102400` for each
+shell manually or adjust the defaults (e.g. `/etc/security/limits.conf`,
+`/etc/systemd/system.conf`, and/or `/etc/systemd/user.conf`).
 
 ### Compiled rocksdb fork
 
 On Ubuntu, install the needed prerequisites:
 
-```
+```bash
 sudo apt-get install libboost-fiber-dev libtbb-dev autoconf cmake build-essential curl git
 ```
 
 Clone noobpwnftw's terakdb repo and build it
 
-```
-git clone https://github.com/noobpwnftw/terarkdb.git
+```bash
+git clone --depth 1 https://github.com/noobpwnftw/terarkdb.git
 cd terarkdb
 ./build.sh
 ```
