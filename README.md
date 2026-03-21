@@ -126,6 +126,9 @@ Once prerequisites are available building is as simple as
 
 ```bash
 make -j
+# for python bindings:
+pip install .
+
 ```
 
 ## Prerequisites
@@ -139,7 +142,7 @@ These dumps are large (~1TB, >50B positions) and might take several hours to dow
 * Dumps can be obtained from [Hugging Face](https://huggingface.co/datasets/robertnurnberg/chessdbcn).
 
 ```bash
-hf download --repo-type dataset robertnurnberg/chessdbcn --local-dir . --cache-dir . --include "chess-20250608/**"
+hf download --repo-type dataset robertnurnberg/chessdbcn --local-dir . --cache-dir . --include "chess-20251115/**"
 ```
 
 * Alternatively, and slower, at the chessdb source:
@@ -177,15 +180,22 @@ On Ubuntu, install the needed prerequisites:
 
 ```bash
 sudo apt-get install libboost-fiber-dev libtbb-dev autoconf cmake build-essential curl git
+pip install pybind11
 ```
 
-Clone noobpwnftw's terakdb repo and build it
+Clone noobpwnftw's terakdb repo and build it (using position independent code, as it will be linked into a shared library):
 
 ```bash
+export CFLAGS="-fPIC $CFLAGS" && export CXXFLAGS="-fPIC $CXXFLAGS" && export EXTRA_CFLAGS="-fPIC" && export EXTRA_CXXFLAGS="-fPIC"
 git clone --depth 1 https://github.com/noobpwnftw/terarkdb.git
 cd terarkdb
 ./build.sh
 ```
 
-After building, ensure this repo's Makefile variables `TERARKDBROOT` and `CHESSDB_PATH` point to `/the/full/path/of/terarkdb/`
-and the path of the DB dump, respectively.
+After building, ensure this repo's Makefile / setup.py variables `TERARKDBROOT` and `CHESSDB_PATH` point to `/the/full/path/of/terarkdb/`
+and the path of the DB dump, respectively. For example:
+
+```bash
+export TERARKDBROOT=/home/vondele/chess/noob/terarkdb
+export CHESSDB_PATH=/mnt/ssd/chess-20251115/data
+```

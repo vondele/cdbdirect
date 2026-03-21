@@ -2,7 +2,6 @@
 TERARKDBROOT = /home/vondele/chess/noob/terarkdb
 
 # Needs to point to the path of the cdb dump
-CHESSDB_PATH = /mnt/ssd/chess-20250608/data
 CHESSDB_PATH = /mnt/ssd/chess-20251115/data
 
 # example executables
@@ -25,7 +24,7 @@ HEADERS = $(LIBHEADER) fen2cdb.h external/threadpool.hpp
 
 # tools
 CXX = g++
-CXXFLAGS = -O3 -g -Wall -march=native -fomit-frame-pointer -flto=auto
+CXXFLAGS = -O3 -g -Wall -march=native -fomit-frame-pointer -flto=auto -fPIC
 CXXFLAGS += -DCHESSDB_PATH=\"$(CHESSDB_PATH)\"
 AR = ar
 ARFLAGS = rcs
