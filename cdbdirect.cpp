@@ -15,6 +15,14 @@
 
 using namespace TERARKDB_NAMESPACE;
 
+enum class STM { WHITE, BLACK, NONE };
+enum class MinPlyType { INIT, SINGLE, DUAL, NONE };
+
+struct CDB {
+  DB *db;
+  MinPlyType min_ply_type;
+};
+
 // Initialize the DB given a path, and return a handle for later use
 std::uintptr_t cdbdirect_initialize(const std::string &path) {
 
@@ -46,25 +54,50 @@ std::uintptr_t cdbdirect_initialize(const std::string &path) {
   options.table_factory.reset(
       NewTerarkZipTableFactory(tzt_options, options.table_factory));
 
-  DB *db;
+  CDB *cdb = new CDB;
 
   // open DB
-  Status s = DB::OpenForReadOnly(options, path, &db);
+  Status s = DB::OpenForReadOnly(options, path, &cdb->db);
   if (!s.ok()) {
     std::cerr << s.ToString() << std::endl;
     std::exit(1);
   }
+  const auto handle = reinterpret_cast<std::uintptr_t>(cdb);
 
-  return reinterpret_cast<std::uintptr_t>(db);
+  // detect the encoding scheme for min_ply with a one-off query of startpos
+  cdb->min_ply_type = MinPlyType::INIT;
+  const auto startpos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
+  auto result = cdbdirect_get(handle, startpos);
+  int ply = result.back().second;
+  switch (ply) {
+  case 0:
+    // the legacy scheme: one min_ply for both fen and BWfen:
+    // heuristic measure for distance to root, not exact
+    cdb->min_ply_type = MinPlyType::SINGLE;
+    break;
+  case 256: // 0x0100: hi = 1, lo = 0(unset)
+    // one min_ply each for fen and BWfen:
+    // exact upper bound for distance to root and proof of legality
+    cdb->min_ply_type = MinPlyType::DUAL;
+    break;
+  default:
+    cdb->min_ply_type = MinPlyType::NONE;
+    std::cerr << "Could not detect min_ply encoding scheme, ply = " << ply
+              << std::endl;
+    std::cerr << "cdbdirect will convert any min_ply to -1." << std::endl;
+    break;
+  }
+
+  return handle;
 }
 
 // Return the size of the DB
 std::uint64_t cdbdirect_size(std::uintptr_t handle) {
 
-  DB *db = reinterpret_cast<DB *>(handle);
+  CDB *cdb = reinterpret_cast<CDB *>(handle);
 
   std::uint64_t size[1];
-  db->GetIntProperty("rocksdb.estimate-num-keys", size);
+  cdb->db->GetIntProperty("rocksdb.estimate-num-keys", size);
 
   return size[0];
 }
@@ -72,10 +105,11 @@ std::uint64_t cdbdirect_size(std::uintptr_t handle) {
 // Finalize the DB
 std::uintptr_t cdbdirect_finalize(std::uintptr_t handle) {
 
-  DB *db = reinterpret_cast<DB *>(handle);
+  CDB *cdb = reinterpret_cast<CDB *>(handle);
 
   // safely close the DB.
-  delete db;
+  delete cdb->db;
+  delete cdb;
 
   return 0;
 }
@@ -94,66 +128,129 @@ int backprop_score(int child_score) {
 }
 
 //
-// given a db key, return the corresponding fen.
-// given there are two possible fens (with equivalent scored moves), pick the
-// one depending on the natural_order
+// given a db key, return the fen corresponding to the key, and its BW mirror
 //
-std::string key_to_fen(const std::string &key, bool natural_order) {
+std::pair<std::string, std::string> key_to_fens(const std::string &key) {
   // key starts with 'h' followed by binary hexfen
   assert(key.size() > 1);
   assert(key[0] == 'h');
   auto hexfen = bin2hex(key.substr(1));
   auto fen = cbhexfen2fen(hexfen);
   auto BWfen = cbgetBWfen(fen);
-  std::string BWhexfen = cbfen2hexfen(BWfen);
-  return (hexfen < BWhexfen) == natural_order ? fen : BWfen;
+  return {fen, BWfen};
 }
 
 //
-// Turn the value string into a vector of scored moves, sorted by score
-// natural_order must match the order used to to turn the key into a fen
+// Turn the value string into a vector of scored moves, sorted by score.
+// The In/Out variable fen_stm indicates which of fen and BWfen to choose.
+// If fen_stm == STM::NONE, then the function itself picks a fen.
 //
 std::vector<std::pair<std::string, int>>
-value_to_scoredMoves(const std::string &value, bool natural_order) {
+value_to_scoredMoves(const std::string &value, STM key_stm, STM &fen_stm,
+                     MinPlyType min_ply_type) {
 
-  std::vector<std::pair<std::string, int>> result;
-
-  // If we have a hit decode the answer
-  if (!value.empty()) {
-    // decode the value to scoredMoves
-    std::vector<StrPair> scoredMoves;
-    get_hash_values(value, scoredMoves);
-
-    result.reserve(scoredMoves.size());
-
-    // convert, the special move a0a0 encodes distance to root
-    int ply = -1;
-    for (auto &pair : scoredMoves) {
-      if (pair.first != "a0a0") {
-        result.push_back(
-            std::make_pair(natural_order ? pair.first : cbgetBWmove(pair.first),
-                           backprop_score(std::stoi(pair.second))));
-      } else {
-        ply = std::stoi(pair.second);
-      }
-    }
-
-    // sort moves
-    std::sort(result.begin(), result.end(),
-              [](const std::pair<std::string, int> &a,
-                 const std::pair<std::string, int> &b) {
-                return a.second > b.second;
-              });
-
-    // add ply distance
-    result.push_back(std::make_pair(std::string("a0a0"), ply));
-
-  } else {
-    // signal failed probe.
-    result.push_back(std::make_pair(std::string("a0a0"), -2));
+  if (value.empty()) {
+    // signal failed probe
+    return {{"a0a0", -2}};
   }
 
+  // decode the value to scoredMoves
+  std::vector<StrPair> scoredMoves;
+  get_hash_values(value, scoredMoves);
+
+  std::vector<std::pair<std::string, int>> result;
+  result.reserve(scoredMoves.size());
+
+  // the special move a0a0 encodes min_ply, usually as the last move
+  int ply = -1;
+  for (auto it = scoredMoves.rbegin(); it != scoredMoves.rend(); ++it) {
+    auto &pair = *it;
+    if (pair.first == "a0a0") {
+
+      ply = std::stoi(pair.second);
+
+      switch (min_ply_type) {
+      case MinPlyType::INIT:
+        //
+        // only called by cdbdirect_initialize(), to detect the min_ply scheme
+        //
+
+        break;
+
+      case MinPlyType::SINGLE:
+        //
+        // the legacy scheme: one min_ply for both fen and BWfen
+        //
+
+        assert(ply >= 0);
+        // for the iterator, always pick the key's fen
+        if (fen_stm == STM::NONE)
+          fen_stm = key_stm;
+        // adjust ply value to account for the side to move
+        if ((fen_stm == STM::WHITE) == (ply % 2))
+          ply++;
+        break;
+
+      case MinPlyType::DUAL: {
+        //
+        // one min_ply each for fen and BWfen: ply = hi|lo = n_white|n_black,
+        // with wtm ply = 2 (n_white - 1) and btm ply = 2 n_black - 1
+        // n_white = 0 and n_black = 0 indicate that the value is undefined
+        //
+
+        int white_ply = ply >> 8;
+        white_ply = white_ply ? 2 * (white_ply - 1) : -1;
+        int black_ply = 2 * (ply & 0xFF) - 1;
+
+        // for the iterator, pick the fen that is reachable (in fewer plies)
+        // if both are unreachable, pick the key's fen
+        if (fen_stm == STM::NONE) {
+          fen_stm = (white_ply < 0 && black_ply < 0)
+                        ? key_stm
+                        : ((white_ply >= 0 &&
+                            (black_ply < 0 || white_ply < black_ply))
+                               ? STM::WHITE
+                               : STM::BLACK);
+        }
+        ply = fen_stm == STM::WHITE ? white_ply : black_ply;
+        break;
+      }
+
+      case MinPlyType::NONE:
+        //
+        // unable to decode the min_ply value, falling back to -1
+        //
+
+        ply = -1;
+        break;
+      }
+      break;
+    }
+  }
+
+  // if no a0a0 was found, pick the key's fen
+  if (ply == -1 && fen_stm == STM::NONE)
+    fen_stm = key_stm;
+
+  for (auto &pair : scoredMoves)
+    if (pair.first != "a0a0")
+      result.push_back(std::make_pair(
+          key_stm == fen_stm ? pair.first : cbgetBWmove(pair.first),
+          backprop_score(std::stoi(pair.second))));
+
+  // sort moves and add ply distance
+  std::sort(
+      result.begin(), result.end(),
+      [](const std::pair<std::string, int> &a,
+         const std::pair<std::string, int> &b) { return a.second > b.second; });
+
+  result.push_back(std::make_pair(std::string("a0a0"), ply));
+
   return result;
+}
+
+STM fen_to_stm(const std::string &fen) {
+  return fen.find(" w ") != std::string::npos ? STM::WHITE : STM::BLACK;
 }
 
 // Probe the DB, get back a vector of moves containing the known scored moves of
@@ -166,56 +263,60 @@ value_to_scoredMoves(const std::string &value, bool natural_order) {
 std::vector<std::pair<std::string, int>> cdbdirect_get(std::uintptr_t handle,
                                                        const std::string &fen) {
 
-  DB *db = reinterpret_cast<DB *>(handle);
+  CDB *cdb = reinterpret_cast<CDB *>(handle);
 
   // The fen or its black-white mirrored equivalent is to be probed,
   // depending on their hexfen order
-  std::string inputfen = fen;
-  std::string hexfen = cbfen2hexfen(inputfen);
-  std::string BWfen = cbgetBWfen(inputfen);
+  STM fen_stm = fen_to_stm(fen);
+  std::string hexfen = cbfen2hexfen(fen);
+  std::string BWfen = cbgetBWfen(fen);
   std::string BWhexfen = cbfen2hexfen(BWfen);
-  bool natural_order = hexfen < BWhexfen;
+  STM key_stm = fen_stm;
+  if (hexfen > BWhexfen)
+    key_stm = fen_stm == STM::WHITE ? STM::BLACK : STM::WHITE;
 
-  // generate the binary fen with prefix 'h' has key
-  std::string key = 'h' + hex2bin(natural_order ? hexfen : BWhexfen);
+  // generate the binary fen with prefix 'h' as key
+  std::string key = 'h' + hex2bin(std::min(hexfen, BWhexfen));
 
   // get value (prefix binary fen by 'h')
   std::string value;
   ReadOptions read_options;
   read_options.verify_checksums = false;
-  Status s = db->Get(read_options, key, &value);
+  Status s = cdb->db->Get(read_options, key, &value);
 
-  // If we have a hit decode the answer
-  if (s.ok()) {
-    return value_to_scoredMoves(value, natural_order);
-  }
+  // If we have a hit, decode the answer
+  if (s.ok())
+    return value_to_scoredMoves(value, key_stm, fen_stm, cdb->min_ply_type);
 
-  // signal failed probe.
-  return value_to_scoredMoves("", natural_order);
+  // signal failed probe
+  return value_to_scoredMoves("", key_stm, fen_stm, cdb->min_ply_type);
 }
 
 //
 // given a range, iterate over it, calling evaluate_entry for each entry
 //
 void IterateRange(
-    DB *db, const RangeStorage &range,
+    CDB *cdb, const RangeStorage &range,
     const std::function<bool(const std::string &,
                              const std::vector<std::pair<std::string, int>> &)>
         &evaluate_entry) {
 
-  const Comparator *cmp = db->GetOptions().comparator;
+  const Comparator *cmp = cdb->db->GetOptions().comparator;
   ReadOptions read_options;
   read_options.verify_checksums = false;
-  std::unique_ptr<Iterator> it(db->NewIterator(read_options));
+  std::unique_ptr<Iterator> it(cdb->db->NewIterator(read_options));
 
   for (it->Seek(range.start);
        it->Valid() && (cmp->Compare(it->key(), range.limit) < 0); it->Next()) {
 
-    // here we pick natural_order = true, but in principle the same db entry
-    // could be used to return two equivalent (but different) fens
-    auto fen = key_to_fen(it->key().ToString(), true);
-    auto scored = value_to_scoredMoves(it->value().ToString(), true);
-    if (!evaluate_entry(fen, scored))
+    // get the key's fen and BWfen
+    auto fens = key_to_fens(it->key().ToString());
+    STM key_stm = fen_to_stm(fens.first), fen_stm = STM::NONE;
+
+    auto scored = value_to_scoredMoves(it->value().ToString(), key_stm, fen_stm,
+                                       cdb->min_ply_type);
+
+    if (!evaluate_entry(key_stm == fen_stm ? fens.first : fens.second, scored))
       break;
   }
 }
@@ -281,13 +382,13 @@ void cdbdirect_apply(
                              const std::vector<std::pair<std::string, int>> &)>
         &evaluate_entry) {
 
-  DB *db = reinterpret_cast<DB *>(handle);
+  CDB *cdb = reinterpret_cast<CDB *>(handle);
 
-  auto ranges = BuildRangesFromSSTs(db, num_threads);
+  auto ranges = BuildRangesFromSSTs(cdb->db, num_threads);
 
   std::vector<std::thread> workers;
   for (auto &r : ranges) {
-    workers.emplace_back(IterateRange, db, r, evaluate_entry);
+    workers.emplace_back(IterateRange, cdb, r, evaluate_entry);
   }
   for (auto &t : workers)
     t.join();
