@@ -16,6 +16,16 @@
 using namespace TERARKDB_NAMESPACE;
 
 enum class STM { WHITE, BLACK, NONE };
+
+STM inverted_stm(STM stm) {
+  assert(stm != STM::NONE);
+  return stm == STM::WHITE ? STM::BLACK : STM::WHITE;
+}
+
+STM fen_to_stm(const std::string &fen) {
+  return fen.find(" w ") != std::string::npos ? STM::WHITE : STM::BLACK;
+}
+
 enum class MinPlyType { INIT, SINGLE, DUAL, NONE };
 
 struct CDB {
@@ -161,82 +171,86 @@ value_to_scoredMoves(const std::string &value, STM key_stm, STM &fen_stm,
   std::vector<std::pair<std::string, int>> result;
   result.reserve(scoredMoves.size());
 
-  // the special move a0a0 encodes min_ply, usually as the last move
+  bool found_a0a0 = false;
   int ply = -1;
-  for (auto it = scoredMoves.rbegin(); it != scoredMoves.rend(); ++it) {
-    auto &pair = *it;
-    if (pair.first == "a0a0") {
-
+  for (auto &pair : scoredMoves) {
+    if (pair.first != "a0a0")
+      result.push_back({pair.first, backprop_score(std::stoi(pair.second))});
+    else {
+      // the special move a0a0 encodes min_ply
       ply = std::stoi(pair.second);
+      found_a0a0 = true;
+    }
+  }
 
-      switch (min_ply_type) {
-      case MinPlyType::INIT:
-        //
-        // only called by cdbdirect_initialize(), to detect the min_ply scheme
-        //
+  if (found_a0a0) {
+    switch (min_ply_type) {
+    case MinPlyType::INIT:
+      //
+      // only called by cdbdirect_initialize(), to detect the min_ply scheme
+      //
+      break;
 
-        break;
+    case MinPlyType::SINGLE:
+      //
+      // the legacy scheme: one min_ply for both fen and BWfen
+      //
 
-      case MinPlyType::SINGLE:
-        //
-        // the legacy scheme: one min_ply for both fen and BWfen
-        //
+      // legacy may have rare overflows into the negative numbers
+      ply = std::max(ply, -1);
 
-        assert(ply >= 0);
-        // for the iterator, always pick the key's fen
-        if (fen_stm == STM::NONE)
-          fen_stm = key_stm;
-        // adjust ply value to account for the side to move
-        if ((fen_stm == STM::WHITE) == (ply % 2))
-          ply++;
-        break;
+      // for the iterator, always pick the key's fen
+      if (fen_stm == STM::NONE)
+        fen_stm = key_stm;
 
-      case MinPlyType::DUAL: {
-        //
-        // one min_ply each for fen and BWfen: ply = hi|lo = n_white|n_black,
-        // with wtm ply = 2 (n_white - 1) and btm ply = 2 n_black - 1
-        // n_white = 0 and n_black = 0 indicate that the value is undefined
-        //
+      // adjust ply value to account for the side to move
+      if (ply >= 0 && (fen_stm == STM::WHITE) == (ply % 2))
+        ply++;
+      break;
 
-        int white_ply = ply >> 8;
-        white_ply = white_ply ? 2 * (white_ply - 1) : -1;
-        int black_ply = 2 * (ply & 0xFF) - 1;
+    case MinPlyType::DUAL: {
+      //
+      // one min_ply each for fen and BWfen: ply = hi|lo = n_white|n_black,
+      // with wtm ply = 2 (n_white - 1) and btm ply = 2 n_black - 1
+      // n_white = 0 and n_black = 0 indicate that the value is undefined
+      //
 
-        // for the iterator, pick the fen that is reachable (in fewer plies)
-        // if both are unreachable, pick the key's fen
-        if (fen_stm == STM::NONE) {
-          fen_stm = (white_ply < 0 && black_ply < 0)
-                        ? key_stm
-                        : ((white_ply >= 0 &&
-                            (black_ply < 0 || white_ply < black_ply))
-                               ? STM::WHITE
-                               : STM::BLACK);
-        }
-        ply = fen_stm == STM::WHITE ? white_ply : black_ply;
-        break;
+      int white_ply = ply >> 8;
+      white_ply = white_ply ? 2 * (white_ply - 1) : -1;
+      int black_ply = 2 * (ply & 0xFF) - 1;
+
+      // for the iterator, pick the fen that is reachable (in fewer plies)
+      if (fen_stm == STM::NONE) {
+        if (white_ply >= 0 && (black_ply < 0 || white_ply < black_ply))
+          fen_stm = STM::WHITE;
+        else if (black_ply >= 0 && (white_ply < 0 || white_ply > black_ply))
+          fen_stm = STM::BLACK;
       }
 
-      case MinPlyType::NONE:
-        //
-        // unable to decode the min_ply value, falling back to -1
-        //
+      // pick the correct ply value for the (chosen) stm
+      // if the fen is not reachable, ply will be set to -1 here
+      ply = fen_stm == STM::WHITE ? white_ply : black_ply;
+      break;
+    }
 
-        ply = -1;
-        break;
-      }
+    case MinPlyType::NONE:
+      //
+      // unable to decode the min_ply value, falling back to -1
+      //
+
+      ply = -1;
       break;
     }
   }
 
-  // if no a0a0 was found, pick the key's fen
-  if (ply == -1 && fen_stm == STM::NONE)
+  // for the iterator, by default pick the key's fen
+  if (fen_stm == STM::NONE)
     fen_stm = key_stm;
 
-  for (auto &pair : scoredMoves)
-    if (pair.first != "a0a0")
-      result.push_back(std::make_pair(
-          key_stm == fen_stm ? pair.first : cbgetBWmove(pair.first),
-          backprop_score(std::stoi(pair.second))));
+  // if fen stm and key stm differ, adjust the move notations
+  if (key_stm != fen_stm)
+    for (auto &pair : result)
+      pair.first = cbgetBWmove(pair.first);
 
   // sort moves and add ply distance
   std::sort(
@@ -249,17 +263,12 @@ value_to_scoredMoves(const std::string &value, STM key_stm, STM &fen_stm,
   return result;
 }
 
-STM fen_to_stm(const std::string &fen) {
-  return fen.find(" w ") != std::string::npos ? STM::WHITE : STM::BLACK;
-}
-
 // Probe the DB, get back a vector of moves containing the known scored moves of
 // cdb fen: a position fen *without move counters* (as they have no meaning in
-// cdb) The result vector contains pairs of moves (algebraic notation) with
-// their score, sorted. The result vector always contains as last element one
-// special move a0a0 with score: -2  (pos not in db), -1  (no known distance to
-// root)
-// >=0 (shortest known distance to root)
+// cdb). The result vector contains pairs of moves (in uci notation) with their
+// score, sorted. As last element the vector always contains the special move
+// a0a0 with score: -2  (pos not in db), -1  (no known distance to root),
+// >=0 (shortest known distance to root).
 std::vector<std::pair<std::string, int>> cdbdirect_get(std::uintptr_t handle,
                                                        const std::string &fen) {
 
@@ -267,29 +276,23 @@ std::vector<std::pair<std::string, int>> cdbdirect_get(std::uintptr_t handle,
 
   // The fen or its black-white mirrored equivalent is to be probed,
   // depending on their hexfen order
-  STM fen_stm = fen_to_stm(fen);
   std::string hexfen = cbfen2hexfen(fen);
   std::string BWfen = cbgetBWfen(fen);
   std::string BWhexfen = cbfen2hexfen(BWfen);
-  STM key_stm = fen_stm;
-  if (hexfen > BWhexfen)
-    key_stm = fen_stm == STM::WHITE ? STM::BLACK : STM::WHITE;
+  STM fen_stm = fen_to_stm(fen);
+  STM key_stm = hexfen < BWhexfen ? fen_stm : inverted_stm(fen_stm);
 
-  // generate the binary fen with prefix 'h' as key
+  // generate the binary fen with prefix 'h' as key, and get the value
   std::string key = 'h' + hex2bin(std::min(hexfen, BWhexfen));
 
-  // get value (prefix binary fen by 'h')
   std::string value;
   ReadOptions read_options;
   read_options.verify_checksums = false;
   Status s = cdb->db->Get(read_options, key, &value);
 
-  // If we have a hit, decode the answer
-  if (s.ok())
-    return value_to_scoredMoves(value, key_stm, fen_stm, cdb->min_ply_type);
-
-  // signal failed probe
-  return value_to_scoredMoves("", key_stm, fen_stm, cdb->min_ply_type);
+  // decode the answer if we have a hit, otherwise signal failed probe
+  return value_to_scoredMoves(s.ok() ? value : "", key_stm, fen_stm,
+                              cdb->min_ply_type);
 }
 
 //
