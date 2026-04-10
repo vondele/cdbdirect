@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cassert>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -49,9 +50,10 @@ std::uintptr_t cdbdirect_initialize(const std::string &path) {
 
   // open DB
   Status s = DB::OpenForReadOnly(options, path, &db);
-  if (!s.ok())
+  if (!s.ok()) {
     std::cerr << s.ToString() << std::endl;
-  assert(s.ok());
+    std::exit(1);
+  }
 
   return reinterpret_cast<std::uintptr_t>(db);
 }
