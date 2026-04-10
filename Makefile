@@ -24,8 +24,12 @@ HEADERS = $(LIBHEADER) fen2cdb.h external/threadpool.hpp
 
 # tools
 CXX = g++
-CXXFLAGS = -O3 -g -Wall -march=native -fomit-frame-pointer -flto=auto -fPIC
-CXXFLAGS += -DCHESSDB_PATH=\"$(CHESSDB_PATH)\"
+CXXFLAGS = -Wall -flto=auto -fPIC -DCHESSDB_PATH=\"$(CHESSDB_PATH)\"
+ifdef DEBUG
+  CXXFLAGS += -O0 -g3 -UNDEBUG
+else
+  CXXFLAGS += -O3 -g -DNDEBUG -march=native -fomit-frame-pointer
+endif
 AR = ar
 ARFLAGS = rcs
 
@@ -34,7 +38,7 @@ INCFLAGS = -I$(TERARKDBROOT)/output/include -I$(TERARKDBROOT)/third-party/terark
 LDFLAGS = -L$(TERARKDBROOT)/output/lib
 LIBS = -lterarkdb -lterark-zip-r -lboost_fiber -lboost_context -ljemalloc -pthread -lgcc -lrt -ldl -ltbb -lgomp -lsnappy -llz4 -lz -lbz2 -latomic
 
-.PHONY = all lib clean format
+.PHONY: all lib clean format
 
 all: $(EXE1) $(EXE2) $(EXE3) lib
 

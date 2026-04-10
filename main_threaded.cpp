@@ -1,5 +1,4 @@
 #include <atomic>
-#include <cassert>
 #include <chrono>
 #include <cstdint>
 #include <fstream>
@@ -23,14 +22,18 @@ int main(int argc, char *argv[]) {
   if (argc > 1)
     filename = argv[1];
 
-  size_t num_threads = std::thread::hardware_concurrency();
-
   // open file with fen/epd
-  std::vector<std::vector<std::string>> fens_chunked;
-  fens_chunked.resize(num_threads * 20);
   std::cout << "Loading: " << filename << std::endl;
   std::ifstream file(filename);
-  assert(file.is_open());
+  if (!file.is_open()) {
+    std::cerr << "Error: Unable to open file." << std::endl;
+    return 1;
+  }
+
+  size_t num_threads = std::thread::hardware_concurrency();
+  std::vector<std::vector<std::string>> fens_chunked;
+  fens_chunked.resize(num_threads * 20);
+
   std::string line;
   size_t nfen = 0;
   while (std::getline(file, line)) {
@@ -55,7 +58,6 @@ int main(int argc, char *argv[]) {
     nfen++;
     fens_chunked[nfen % fens_chunked.size()].push_back(fen);
   }
-
   file.close();
 
   // keep a list of known fens to store later
@@ -133,8 +135,13 @@ int main(int argc, char *argv[]) {
     eval_map[tuple.first] = tuple.second;
   }
 
-  std::ofstream ofile("cdbdirect.epd");
-  assert(ofile.is_open());
+  std::string ofilename = "cdbdirect.epd";
+  std::ofstream ofile(ofilename);
+  if (!ofile.is_open()) {
+    std::cerr << "Error: Unable to open file" << ofilename << "." << std::endl;
+    return 1;
+  }
+
   file.open(filename);
   while (std::getline(file, line)) {
     std::istringstream iss(line);
@@ -167,7 +174,7 @@ int main(int argc, char *argv[]) {
     ofile << ";\n";
   }
   ofile.close();
-  std::cout << "Known evals written to cdbdirect.epd." << std::endl;
+  std::cout << "Known evals written to " << ofilename << "." << std::endl;
 
   // Close DB
   std::cout << "Closing DB" << std::endl;

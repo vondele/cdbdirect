@@ -1,4 +1,3 @@
-#include <cassert>
 #include <chrono>
 #include <cstdint>
 #include <fstream>
@@ -22,7 +21,10 @@ int main(int argc, char *argv[]) {
 
   // open file with fen/epd
   std::ifstream file(filename);
-  assert(file.is_open());
+  if (!file.is_open()) {
+    std::cerr << "Error: Unable to open file." << std::endl;
+    return 1;
+  }
 
   std::string line;
   while (std::getline(file, line)) {
