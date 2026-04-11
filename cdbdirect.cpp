@@ -171,86 +171,72 @@ value_to_scoredMoves(const std::string &value, STM key_stm, STM &fen_stm,
   std::vector<std::pair<std::string, int>> result;
   result.reserve(scoredMoves.size());
 
-  bool found_a0a0 = false;
-  int ply = -1;
+  int white_ply = -1, black_ply = -1;
   for (auto &pair : scoredMoves) {
-    if (pair.first != "a0a0")
-      result.push_back({pair.first, backprop_score(std::stoi(pair.second))});
-    else {
+    if (pair.first == "a0a0") {
       // the special move a0a0 encodes min_ply
-      ply = std::stoi(pair.second);
-      found_a0a0 = true;
-    }
-  }
+      int ply = std::stoi(pair.second);
+      switch (min_ply_type) {
+      case MinPlyType::INIT:
+        //
+        // only called by cdbdirect_initialize(), to detect the min_ply scheme
+        //
+        return {{"a0a0", ply}};
 
-  if (found_a0a0) {
-    switch (min_ply_type) {
-    case MinPlyType::INIT:
-      //
-      // only called by cdbdirect_initialize(), to detect the min_ply scheme
-      //
-      break;
+      case MinPlyType::SINGLE:
+        //
+        // the legacy scheme: one min_ply for both fen and BWfen
+        //
 
-    case MinPlyType::SINGLE:
-      //
-      // the legacy scheme: one min_ply for both fen and BWfen
-      //
+        // legacy may have rare overflows into the negative numbers
+        ply = std::max(ply, -1);
 
-      // legacy may have rare overflows into the negative numbers
-      ply = std::max(ply, -1);
+        if (ply >= 0) {
+          white_ply = ply % 2 ? ply + 1 : ply;
+          black_ply = ply % 2 ? ply : ply + 1;
+        }
+        break;
 
-      // for the iterator, always pick the key's fen
-      if (fen_stm == STM::NONE)
-        fen_stm = key_stm;
+      case MinPlyType::DUAL: {
+        //
+        // one min_ply each for fen and BWfen: ply = hi|lo = n_white|n_black,
+        // with wtm ply = 2 (n_white - 1) and btm ply = 2 n_black - 1
+        // n_white = 0 and n_black = 0 indicate that the value is undefined
+        //
 
-      // adjust ply value to account for the side to move
-      if (ply >= 0 && (fen_stm == STM::WHITE) == (ply % 2))
-        ply++;
-      break;
-
-    case MinPlyType::DUAL: {
-      //
-      // one min_ply each for fen and BWfen: ply = hi|lo = n_white|n_black,
-      // with wtm ply = 2 (n_white - 1) and btm ply = 2 n_black - 1
-      // n_white = 0 and n_black = 0 indicate that the value is undefined
-      //
-
-      int white_ply = ply >> 8;
-      white_ply = white_ply ? 2 * (white_ply - 1) : -1;
-      int black_ply = 2 * (ply & 0xFF) - 1;
-
-      // for the iterator, pick the fen that is reachable (in fewer plies)
-      if (fen_stm == STM::NONE) {
-        if (white_ply >= 0 && (black_ply < 0 || white_ply < black_ply))
-          fen_stm = STM::WHITE;
-        else if (black_ply >= 0 && (white_ply < 0 || white_ply > black_ply))
-          fen_stm = STM::BLACK;
+        white_ply = std::max(2 * (ply >> 8) - 2, -1);
+        black_ply = 2 * (ply & 0xFF) - 1;
+        break;
       }
 
-      // pick the correct ply value for the (chosen) stm
-      // if the fen is not reachable, ply will be set to -1 here
-      ply = fen_stm == STM::WHITE ? white_ply : black_ply;
-      break;
-    }
-
-    case MinPlyType::NONE:
-      //
-      // unable to decode the min_ply value, falling back to -1
-      //
-
-      ply = -1;
-      break;
-    }
+      case MinPlyType::NONE:
+        //
+        // unable to decode the min_ply value, falling back to -1
+        //
+        break;
+      }
+    } else
+      result.push_back({fen_stm == STM::NONE || fen_stm == key_stm
+                            ? pair.first
+                            : cbgetBWmove(pair.first),
+                        backprop_score(std::stoi(pair.second))});
   }
 
-  // for the iterator, by default pick the key's fen
-  if (fen_stm == STM::NONE)
-    fen_stm = key_stm;
+  // for the iterator, pick the fen that is reachable (in fewer plies)
+  // if none of the two is reachable, by default pick the key's fen
+  if (fen_stm == STM::NONE) {
+    if (white_ply >= 0 && (black_ply < 0 || white_ply < black_ply))
+      fen_stm = STM::WHITE;
+    else if (black_ply >= 0 && (white_ply < 0 || white_ply > black_ply))
+      fen_stm = STM::BLACK;
+    else
+      fen_stm = key_stm;
 
-  // if fen stm and key stm differ, adjust the move notations
-  if (key_stm != fen_stm)
-    for (auto &pair : result)
-      pair.first = cbgetBWmove(pair.first);
+    // if fen stm and key stm differ, adjust the move notations
+    if (fen_stm != key_stm)
+      for (auto &pair : result)
+        pair.first = cbgetBWmove(pair.first);
+  }
 
   // sort moves and add ply distance
   std::sort(
@@ -258,7 +244,7 @@ value_to_scoredMoves(const std::string &value, STM key_stm, STM &fen_stm,
       [](const std::pair<std::string, int> &a,
          const std::pair<std::string, int> &b) { return a.second > b.second; });
 
-  result.push_back(std::make_pair(std::string("a0a0"), ply));
+  result.push_back({"a0a0", fen_stm == STM::WHITE ? white_ply : black_ply});
 
   return result;
 }
