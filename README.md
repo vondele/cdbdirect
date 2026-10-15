@@ -142,19 +142,19 @@ These dumps are large (~1TB, >50B positions) and might take several hours to dow
 * Dumps can be obtained from [Hugging Face](https://huggingface.co/datasets/robertnurnberg/chessdbcn).
 
 ```bash
-hf download --repo-type dataset robertnurnberg/chessdbcn --local-dir . --cache-dir . --include "chess-20251115/**"
+hf download --repo-type dataset robertnurnberg/chessdbcn --local-dir . --include "chess-20260702/**"
 ```
 
 * Alternatively, and slower, at the chessdb source:
 
 ```bash
-wget -c -r -nH --cut-dirs=2 --no-parent --reject="index.html*" -e robots=off ftp://chessdb:chessdb@ftp.chessdb.cn/pub/chessdb/chess-20251115
+wget -c -r -nH --cut-dirs=2 --no-parent --reject="index.html*" -e robots=off ftp://chessdb:chessdb@ftp.chessdb.cn/pub/chessdb/chess-20260702
 ```
 
 * Or faster, with rclone:
 
 ```bash
-rclone copy chessdb:/pub/chessdb/chess-20251115 ./chess-20251115  --transfers=10 --checkers=20 --multi-thread-streams=4 --multi-thread-chunk-size=128M --multi-thread-cutoff=1   --no-traverse     --exclude "index.html*"     --progress
+rclone copy chessdb:/pub/chessdb/chess-20260702 ./chess-20260702  --transfers=10 --checkers=20 --multi-thread-streams=4 --multi-thread-chunk-size=128M --multi-thread-cutoff=1   --no-traverse     --exclude "index.html*"     --progress
 ```
 
 After creating a config for the remote chessdb:
@@ -197,5 +197,5 @@ and the path of the DB dump, respectively. For example:
 
 ```bash
 export TERARKDBROOT=/home/vondele/chess/noob/terarkdb
-export CHESSDB_PATH=/mnt/ssd/chess-20251115/data
+export CHESSDB_PATH=/mnt/ssd/chess-20260702/data
 ```
