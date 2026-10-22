@@ -139,10 +139,10 @@ A suitably prepared dump of the database.
 
 These dumps are large (~1TB, >50B positions) and might take several hours to download.
 
-* Dumps can be obtained from [Hugging Face](https://huggingface.co/datasets/robertnurnberg/chessdbcn).
+* Dumps can be obtained from [Hugging Face](https://huggingface.co/datasets/chessdb/snapshots).
 
 ```bash
-hf download --repo-type dataset robertnurnberg/chessdbcn --local-dir . --include "chess-20260702/**"
+hf download --repo-type dataset chessdb/snapshots --local-dir . --include "chess-20260702/**"
 ```
 
 * Alternatively, and slower, at the chessdb source:
